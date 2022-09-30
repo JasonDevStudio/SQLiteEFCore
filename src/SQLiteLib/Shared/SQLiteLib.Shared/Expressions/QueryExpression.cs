@@ -1,16 +1,13 @@
-﻿using SQLiteLib.Table.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace SQLiteEFCore.Shared.DB
 {
-    public class QueryParameter
+    public abstract class QueryExpression
     {
-        /// <summary>
-        /// 数据列
-        /// </summary>
-        public IDataColumn DataColumn { get; set; }
+        public string Field { get; set; }
 
         /// <summary>
         /// 一元运算逻辑
@@ -23,8 +20,9 @@ namespace SQLiteEFCore.Shared.DB
         public object Value { get; set; }
 
         /// <summary>
-        /// 二元运算逻辑
+        /// 生成Sql
         /// </summary>
-        public string Binary { get; set; }
+        /// <returns>Sql</returns>
+        public abstract string BuildSql();
     }
 }

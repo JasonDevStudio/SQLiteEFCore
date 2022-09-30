@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)DB\DBContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Expressions\QueryExpression.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DB\QueryLogic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DB\QueryParameter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumn.cs" />
@@ -30,5 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Data\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Expressions\" />
   </ItemGroup>
 </Project>
