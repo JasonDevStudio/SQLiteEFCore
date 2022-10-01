@@ -1,4 +1,6 @@
-﻿namespace SQLiteLib.Table.Impl
+﻿using SQLiteLib.Table.Interfaces;
+
+namespace SQLiteLib.Table.Impl
 {
     /// <summary>
     /// IDataColumnCollection

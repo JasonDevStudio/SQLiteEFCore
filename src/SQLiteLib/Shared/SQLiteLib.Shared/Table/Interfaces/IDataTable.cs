@@ -51,5 +51,11 @@
         /// 新增数据
         /// </summary>
         void BulkInsert();
+
+        /// <summary>
+        /// 创建新数据行
+        /// </summary>
+        /// <returns>IDataRow</returns>
+        IDataRow NewRow();
     }
 }

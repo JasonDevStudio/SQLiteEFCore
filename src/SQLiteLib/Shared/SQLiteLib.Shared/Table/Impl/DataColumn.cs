@@ -1,4 +1,6 @@
-﻿namespace SQLiteLib.Table.Impl
+﻿using SQLiteLib.Table.Interfaces;
+
+namespace SQLiteLib.Table.Impl
 {
     /// <summary>
     /// IDataColumn
@@ -50,5 +52,10 @@
         /// 表达式
         /// </summary>
         public string Expression { get; set; }
+
+        /// <summary>
+        /// 排序方式
+        /// </summary>
+        public string OrderBy { get; set; }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace SQLiteLib.Table.Impl
+﻿using SQLiteLib.Table.Interfaces;
+
+namespace SQLiteLib.Table.Impl
 {
     /// <summary>
     /// IDataTable
@@ -51,5 +53,11 @@
         /// 新增数据
         /// </summary>
         public void BulkInsert() { }
+
+        /// <summary>
+        /// 创建数据行
+        /// </summary>
+        /// <returns>IDataRow</returns>
+        public IDataRow NewRow() => new DataRow() { Table = this, RowIndex = this.RowCount, Values = new object[this.ColumnCount] };
     }
 }

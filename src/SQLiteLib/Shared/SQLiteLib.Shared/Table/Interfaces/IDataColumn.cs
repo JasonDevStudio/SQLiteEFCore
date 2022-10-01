@@ -36,6 +36,11 @@ namespace SQLiteLib.Table.Interfaces
         string Field { get; set; }
 
         /// <summary>
+        /// OrderBy
+        /// </summary>
+        string OrderBy { get; set; }
+
+        /// <summary>
         /// Column Origin Index
         /// </summary>
         short ColumnIndex { get; set; }

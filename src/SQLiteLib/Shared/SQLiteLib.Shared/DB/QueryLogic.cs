@@ -14,7 +14,7 @@ namespace SQLiteEFCore.Shared.DB
 
         public const string NotLike = "NOT LIKE";
 
-        public const string IN = "LIKE";
+        public const string IN = "IN";
 
         public const string Equal = "=";
 

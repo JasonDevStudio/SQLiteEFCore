@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using SQLiteEFCore.Shared.DB;
 using SQLiteLib.Table.Impl;
 using SQLiteLib.Table.Interfaces;
 using System.Diagnostics.CodeAnalysis;
@@ -115,12 +116,32 @@ namespace SQLiteLib
         /// <param name="table">IDataTable</param>
         /// <param name="columns">需要查询的数据列集合</param>
         /// <returns>IDataRowCollection</returns>
-        public IDataRowCollection Query(IDataTable table, DataColumnCollection columns, params SqliteParameter[] parameters)
+        public async Task<IDataRowCollection> QueryAsync(IDataTable table, DataColumnCollection columns, List<Condition> parameters, DataColumnCollection orderFields = null)
         {
+            await this.OnConfiguring();
             var rows = new DataRowCollection() { Table = table };
             var sql = new StringBuilder();
             var cmd = new SqliteCommand();
+            var whereSql = Condition.BuildSql(parameters);
+            var orderSql = Condition.BuildOrderSql(orderFields);
+            sql.Append($"SELECT {string.Join(',', columns.Select(c => c.Field))} FROM {table.Name} {whereSql} ");
+            sql.Append(whereSql);
+            sql.Append(orderSql);
+            cmd.CommandText = sql.ToString();
+            cmd.Connection = this.connection;
+            var reader = cmd.ExecuteReader();
 
+            while (await reader.ReadAsync())
+            {
+                var row = table.NewRow();
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    var column = columns[i];
+                    row[column.ColumnIndex] = reader[i];
+                }
+
+                rows.Add(row);
+            }
 
             return rows;
         }
@@ -131,17 +152,168 @@ namespace SQLiteLib
 
         /// <summary>
         /// 批量写入数据库
-        /// </summary>
-        /// <typeparam name="T">数据库实体类型</typeparam>
-        /// <param name="entites">需要写入数据库的实体集合</param>
-        /// <param name="options">BulkOperation</param>
-        /// <returns>dynamic</returns>
-        public void BulkInserts<T>(IEnumerable<T> entites, Action<BulkOperation<T>> options = null)
-            where T : class, new()
+        /// </summary> 
+        /// <param name="rows">需要写入数据库的数据行集合</param>
+        /// <returns>Task</returns>
+        public async Task WriteAsync(DataRowCollection rows)
         {
-            var sqlLog = new StringBuilder();
-            options ??= GetOptions(sqlLog);
-            this.BulkInsert(entites, options);
+            await this.OnConfiguring();
+            using var tran = await this.connection.BeginTransactionAsync();
+
+            try
+            {
+                var columns = rows.Table.Columns;
+                var fieldStr = string.Join(',', columns.Select(c => c.Field));
+                var paraStr = string.Join(',', columns.Select(c => $"${c.Field}"));
+                var sql = $"INSERT INTO {rows.Table.Name} ({fieldStr}) VALUES({paraStr})";
+                var cmd = new SqliteCommand(sql, this.connection);
+                var recount = 0;
+
+                foreach (var row in rows)
+                {
+                    cmd.Parameters?.Clear();
+
+                    foreach (var col in columns)
+                        cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
+
+                    recount += await cmd.ExecuteNonQueryAsync();
+                }
+
+                await tran.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await tran.RollbackAsync();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 新增数据列
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        public async Task AddColumnsAsync(UpdateSetting setting)
+        {
+            await this.OnConfiguring();
+
+            try
+            {
+                var cmd = new SqliteCommand() { Connection = this.connection };
+                var recount = 0;
+
+                foreach (var col in setting.AddColumns)
+                {
+                    cmd.CommandText = $"ALTER TABLE {setting.Table.Name} ADD COLUMN {col.Field} {Enum.GetName(GetSqliteType(col.TypeCode))} ";
+                    recount += await cmd.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <param name="columns">新增的数据列集合</param>
+        /// <param name="rows">需要写入数据库的数据行集合</param>
+        /// <returns></returns>
+        public async Task UpdateAsync(UpdateSetting setting)
+        {
+            await this.OnConfiguring();
+            using var tran = await this.connection.BeginTransactionAsync();
+
+            try
+            {
+                var sqlBuilder = new StringBuilder();
+                var cmd = new SqliteCommand() { Connection = this.connection };
+                var recount = 0;
+
+                sqlBuilder.Append($"UPDATE {setting.Table.Name} SET ");
+
+                for (int i = 0; i < setting.UpdateColumns.Count; i++)
+                {
+                    if (i > 0)
+                        sqlBuilder.Append($",");
+
+                    var col = setting.UpdateColumns[i];
+                    sqlBuilder.Append($"{col.Field} = ${col.Field}");
+                }
+
+                sqlBuilder.Append($" WHERE ");
+
+                for (int i = 0; i < setting.PrimaryColumns.Count; i++)
+                {
+                    if (i > 0)
+                        sqlBuilder.Append($" {QueryLogic.AND} ");
+
+                    var col = setting.PrimaryColumns[i];
+                    sqlBuilder.Append($"{col.Field} = ${col.Field}");
+                }
+
+                cmd.CommandText = sqlBuilder.ToString();
+
+                foreach (var row in setting.Rows)
+                {
+                    cmd.Parameters?.Clear();
+
+                    foreach (var col in setting.UpdateColumns)
+                        cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
+
+                    foreach (var col in setting.PrimaryColumns)
+                        cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
+
+                    recount += await cmd.ExecuteNonQueryAsync();
+                }
+
+                await tran.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await tran.RollbackAsync();
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region private method
+
+        /// <summary>
+        /// 通过C# 类型Code 获取Sqlite Type
+        /// </summary>
+        /// <param name="code">C# TypeCode</param>
+        /// <returns>SqliteType</returns>
+        private SqliteType GetSqliteType(TypeCode code)
+        {
+            switch (code)
+            {
+                case TypeCode.Object:
+                    return SqliteType.Blob;
+                case TypeCode.Boolean:
+                case TypeCode.SByte:
+                case TypeCode.Byte:
+                case TypeCode.Int16:
+                case TypeCode.UInt16:
+                case TypeCode.Int32:
+                case TypeCode.UInt32:
+                case TypeCode.Int64:
+                case TypeCode.UInt64:
+                    return SqliteType.Integer;
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.Decimal:
+                    return SqliteType.Real;
+                case TypeCode.DateTime:
+                case TypeCode.String:
+                case TypeCode.Char:
+                case TypeCode.DBNull:
+                case TypeCode.Empty:
+                default:
+                    return SqliteType.Text;
+            }
         }
 
         #endregion
