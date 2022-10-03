@@ -1,10 +1,7 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using System.Text;
+using Microsoft.Data.Sqlite;
 using SQLiteLib.Table.Impl;
 using SQLiteLib.Table.Interfaces;
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace SQLiteLib
 {
@@ -355,7 +352,7 @@ namespace SQLiteLib
             #region Rename
 
             var rename = $"{setting.LeftTable}_{DateTime.Now:MMddHHmmss}";
-            await this.ReNameAsync(setting.LeftTable, rename);
+            await this.RenameAsync(setting.LeftTable, rename);
             setting.LeftTable = rename;
 
             #endregion

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SQLiteLib.Table.Interfaces
+﻿namespace SQLiteLib.Table.Interfaces
 {
     /// <summary>
     /// IDataColumn

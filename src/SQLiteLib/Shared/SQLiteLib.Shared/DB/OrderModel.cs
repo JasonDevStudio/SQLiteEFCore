@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SQLiteLib
+﻿namespace SQLiteLib
 {
     public static class OrderModel
     {

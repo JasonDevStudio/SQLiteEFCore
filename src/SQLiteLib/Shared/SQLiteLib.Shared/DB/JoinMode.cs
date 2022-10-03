@@ -1,5 +1,4 @@
-﻿using System;
-namespace SQLiteLib
+﻿namespace SQLiteLib
 {
     public enum JoinMode
     {
