@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SQLiteEFCore.Shared.DB
+namespace SQLiteLib
 {
     public class Condition
     {
@@ -31,11 +31,11 @@ namespace SQLiteEFCore.Shared.DB
         public string Binary { get; set; }
 
         /// <summary>
-        /// 生成Sql
+        /// 生成 Where Sql
         /// </summary>
         /// <param name="parameters">参数集合</param>
         /// <returns>SQL</returns>
-        public static string BuildSql(List<Condition> parameters)
+        public static string BuildWhereSql(List<Condition> parameters)
         {
             var sql = new StringBuilder();
 
@@ -56,11 +56,36 @@ namespace SQLiteEFCore.Shared.DB
         }
 
         /// <summary>
+        /// 生成 Join Sql
+        /// </summary>
+        /// <param name="parameters">参数集合</param>
+        /// <returns>SQL</returns>
+        public static string BuildJoinSql(List<Condition> parameters)
+        {
+            var sql = new StringBuilder();
+
+            if (parameters.Any())
+            {
+                sql.Append(" ON ");
+
+                for (int i = 0; i < parameters.Count; i++)
+                {
+                    if (i > 0)
+                        sql.Append($" {parameters[i].Binary} ");
+
+                    sql.Append(parameters[i].ToString());
+                }
+            }
+
+            return sql.ToString();
+        }
+
+        /// <summary>
         /// 生成排序SQL
         /// </summary>
         /// <param name="columns">需要排序的字段</param>
         /// <returns>SQL</returns>
-        public static string BuildOrderSql(List<IDataColumn> columns)
+        public static string BuildOrderSql(IDataColumnCollection columns)
         {
             var sql = new StringBuilder();
 
@@ -86,29 +111,29 @@ namespace SQLiteEFCore.Shared.DB
         {
             switch (this.Logic)
             {
-                case QueryLogic.Like:
+                case LogicMode.Like:
                     return this.BuildLikeSql();
-                case QueryLogic.IN:
+                case LogicMode.IN:
                     return this.BuildINSql();
-                case QueryLogic.LessThanOrEqual:
+                case LogicMode.LessThanOrEqual:
                     return this.BuildLessThanOrEqualSql();
-                case QueryLogic.LessThan:
+                case LogicMode.LessThan:
                     return this.BuildLessThanSql();
-                case QueryLogic.GreaterThanOrEqual:
+                case LogicMode.GreaterThanOrEqual:
                     return this.BuildGreaterThanOrEqualSql();
-                case QueryLogic.GreaterThan:
+                case LogicMode.GreaterThan:
                     return this.BuildGreaterThanSql();
-                case QueryLogic.Between:
+                case LogicMode.Between:
                     return this.BuildBetweenSql();
-                case QueryLogic.NotBetween:
+                case LogicMode.NotBetween:
                     return this.BuildNotBetweenSql();
-                case QueryLogic.IsNull:
+                case LogicMode.IsNull:
                     return this.BuildIsNullSql();
-                case QueryLogic.IsNotNull:
+                case LogicMode.IsNotNull:
                     return this.BuildIsNotNullSql();
-                case QueryLogic.NotEqual:
+                case LogicMode.NotEqual:
                     return this.BuildNotEqualSql();
-                case QueryLogic.Equal:
+                case LogicMode.Equal:
                 default:
                     return this.BuildEqualSql();
             }
@@ -118,7 +143,7 @@ namespace SQLiteEFCore.Shared.DB
         /// Build Like Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildLikeSql() => $"{this.DataColumn.Field} {QueryLogic.Like} '%'{this.Value}'%' ";
+        private string BuildLikeSql() => $"{this.DataColumn.Field} {LogicMode.Like} '%'{this.Value}'%' ";
 
         /// <summary>
         /// Build LessThanOrEqual(<=) Sql
@@ -132,7 +157,7 @@ namespace SQLiteEFCore.Shared.DB
                 if (Regex.IsMatch($"{val}", @"^[-+]?([0-9]+)([.]([0-9]+))?$"))
                 {
                     var valStr = string.Join(',', list);
-                    return $"{this.DataColumn.Field} {QueryLogic.IN} ({valStr}) ";
+                    return $"{this.DataColumn.Field} {LogicMode.IN} ({valStr}) ";
                 }
                 else
                 {
@@ -141,7 +166,7 @@ namespace SQLiteEFCore.Shared.DB
                         arry[i] = $"'{list[i]}'";
 
                     var valStr = string.Join(',', arry);
-                    return $"{this.DataColumn.Field} {QueryLogic.IN} ({valStr}) ";
+                    return $"{this.DataColumn.Field} {LogicMode.IN} ({valStr}) ";
                 }
             }
 
@@ -152,49 +177,49 @@ namespace SQLiteEFCore.Shared.DB
         /// Build LessThanOrEqual(<=) Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildLessThanOrEqualSql() => $"{this.DataColumn.Field} {QueryLogic.LessThanOrEqual} {this.Value} ";
+        private string BuildLessThanOrEqualSql() => $"{this.DataColumn.Field} {LogicMode.LessThanOrEqual} {this.Value} ";
 
         /// <summary>
         /// Build LessThan(<) Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildLessThanSql() => $"{this.DataColumn.Field} {QueryLogic.LessThan} {this.Value} ";
+        private string BuildLessThanSql() => $"{this.DataColumn.Field} {LogicMode.LessThan} {this.Value} ";
 
         /// <summary>
         /// Build GreaterThanOrEqual(>=) Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildGreaterThanOrEqualSql() => $"{this.DataColumn.Field} {QueryLogic.GreaterThanOrEqual} {this.Value} ";
+        private string BuildGreaterThanOrEqualSql() => $"{this.DataColumn.Field} {LogicMode.GreaterThanOrEqual} {this.Value} ";
 
         /// <summary>
         /// Build GreaterThan(>) Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildGreaterThanSql() => $"{this.DataColumn.Field} {QueryLogic.GreaterThan} {this.Value} ";
+        private string BuildGreaterThanSql() => $"{this.DataColumn.Field} {LogicMode.GreaterThan} {this.Value} ";
 
         /// <summary>
         /// Build IsNull Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildIsNullSql() => $"{this.DataColumn.Field} {QueryLogic.IsNull} ";
+        private string BuildIsNullSql() => $"{this.DataColumn.Field} {LogicMode.IsNull} ";
 
         /// <summary>
         /// Build IsNotNull Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildIsNotNullSql() => $"{this.DataColumn.Field} {QueryLogic.IsNotNull} ";
+        private string BuildIsNotNullSql() => $"{this.DataColumn.Field} {LogicMode.IsNotNull} ";
 
         /// <summary>
         /// Build Equal Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildEqualSql() => $"{this.DataColumn.Field} {QueryLogic.Equal} '{this.Value}' ";
+        private string BuildEqualSql() => $"{this.DataColumn.Field} {LogicMode.Equal} '{this.Value}' ";
 
         /// <summary>
         /// Build NotEqual Sql
         /// </summary>
         /// <returns>Sql</returns>
-        private string BuildNotEqualSql() => $"{this.DataColumn.Field} {QueryLogic.NotEqual} '{this.Value}' ";
+        private string BuildNotEqualSql() => $"{this.DataColumn.Field} {LogicMode.NotEqual} '{this.Value}' ";
 
         /// <summary>
         /// 生成Between Sql
@@ -203,7 +228,7 @@ namespace SQLiteEFCore.Shared.DB
         private string BuildBetweenSql()
         {
             if (this.Value is IList list && list.Count == 2)
-                return $"{this.DataColumn.Field} {QueryLogic.Between} {list[0]} {QueryLogic.AND} {list[^1]} ";
+                return $"{this.DataColumn.Field} {LogicMode.Between} {list[0]} {LogicMode.AND} {list[^1]} ";
             return string.Empty;
         }
 
@@ -214,7 +239,7 @@ namespace SQLiteEFCore.Shared.DB
         private string BuildNotBetweenSql()
         {
             if (this.Value is IList list && list.Count == 2)
-                return $"{this.DataColumn.Field} {QueryLogic.NotBetween} {list[0]} {QueryLogic.AND} {list[^1]} ";
+                return $"{this.DataColumn.Field} {LogicMode.NotBetween} {list[0]} {LogicMode.AND} {list[^1]} ";
             return string.Empty;
         }
     }

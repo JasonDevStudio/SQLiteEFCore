@@ -10,8 +10,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)DB\DBContext.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DB\QueryOrderModel.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)DB\QueryLogic.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DB\OrderModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DB\LogicMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DB\Condition.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DB\UpdateSetting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumn.cs" />
@@ -24,10 +24,13 @@
     <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataRow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataColumn.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DB\MergeSetting.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DB\JoinMode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DB\QuerySetting.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)Data\Sqlite.db">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>

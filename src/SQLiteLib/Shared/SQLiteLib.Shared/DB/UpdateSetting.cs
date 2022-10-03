@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SQLiteEFCore.Shared.DB
+namespace SQLiteLib
 {
     /// <summary>
     /// UpdateSetting
@@ -11,10 +11,14 @@ namespace SQLiteEFCore.Shared.DB
     public class UpdateSetting
     {
         /// <summary>
-        /// 数据表
+        /// 合并列时选择的Join 方式
         /// </summary>
-        [Newtonsoft.Json.JsonIgnore]
-        public IDataTable Table { get; set; }
+        public JoinMode Join { get; set; }
+
+        /// <summary>
+        /// 数据表
+        /// </summary> 
+        public string Table { get; set; }
 
         /// <summary>
         /// 需要更新数据的表字段集合
@@ -30,6 +34,11 @@ namespace SQLiteEFCore.Shared.DB
         /// 需要新增的数据列
         /// </summary>
         public IDataColumnCollection AddColumns { get; set; }
+
+        /// <summary>
+        /// 需要删除的数据列
+        /// </summary>
+        public IDataColumnCollection DelColumns { get; set; }
 
         /// <summary>
         /// 主键列

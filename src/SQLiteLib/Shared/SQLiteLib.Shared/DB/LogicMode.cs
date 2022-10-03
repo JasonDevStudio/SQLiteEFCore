@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SQLiteEFCore.Shared.DB
+namespace SQLiteLib
 {
-    public static class QueryLogic
-    {
+    public static class LogicMode
+    { 
         public const string AND = "AND";
 
         public const string OR = "OR";

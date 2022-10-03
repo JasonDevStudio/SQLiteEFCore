@@ -1,7 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
-using SQLiteEFCore.Shared.DB;
 using SQLiteLib.Table.Impl;
 using SQLiteLib.Table.Interfaces;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -113,30 +113,32 @@ namespace SQLiteLib
         /// <summary>
         /// 查询数据
         /// </summary>
-        /// <param name="table">IDataTable</param>
-        /// <param name="columns">需要查询的数据列集合</param>
+        /// <param name="setting">数据查询参数设置</param> 
         /// <returns>IDataRowCollection</returns>
-        public async Task<IDataRowCollection> QueryAsync(IDataTable table, DataColumnCollection columns, List<Condition> parameters, DataColumnCollection orderFields = null)
+        public async Task<IDataRowCollection> QueryAsync(QuerySetting setting)
         {
+            if (setting.Table == null)
+                throw new ArgumentNullException(nameof(QuerySetting.Table));
+
+            if (!(setting.Columns?.Any() ?? false))
+                throw new ArgumentNullException(nameof(QuerySetting.Columns));
+
             await this.OnConfiguring();
-            var rows = new DataRowCollection() { Table = table };
-            var sql = new StringBuilder();
+            var rows = new DataRowCollection() { Table = setting.Table }; 
             var cmd = new SqliteCommand();
-            var whereSql = Condition.BuildSql(parameters);
-            var orderSql = Condition.BuildOrderSql(orderFields);
-            sql.Append($"SELECT {string.Join(',', columns.Select(c => c.Field))} FROM {table.Name} {whereSql} ");
-            sql.Append(whereSql);
-            sql.Append(orderSql);
+            var whereSql = Condition.BuildWhereSql(setting.Parameters);
+            var orderSql = Condition.BuildOrderSql(setting.OrderFields);
+            var sql = $"SELECT {string.Join(',', setting.Columns.Select(c => c.Field))} FROM {setting.Table.Name} {whereSql} {orderSql}";
             cmd.CommandText = sql.ToString();
             cmd.Connection = this.connection;
             var reader = cmd.ExecuteReader();
 
             while (await reader.ReadAsync())
             {
-                var row = table.NewRow();
-                for (int i = 0; i < columns.Count; i++)
+                var row = setting.Table.NewRow();
+                for (int i = 0; i < setting.Columns.Count; i++)
                 {
-                    var column = columns[i];
+                    var column = setting.Columns[i];
                     row[column.ColumnIndex] = reader[i];
                 }
 
@@ -148,44 +150,41 @@ namespace SQLiteLib
 
         #endregion
 
-        #region BulkInsert
+        #region Insert Del Update Del Rename Drop
 
         /// <summary>
         /// 批量写入数据库
         /// </summary> 
         /// <param name="rows">需要写入数据库的数据行集合</param>
         /// <returns>Task</returns>
-        public async Task WriteAsync(DataRowCollection rows)
+        public async Task InsertAsync(IDataRowCollection rows)
         {
+            if (rows == null || !rows.Any())
+                throw new ArgumentNullException(nameof(rows));
+
+            if (string.IsNullOrWhiteSpace(rows.Table.Name))
+                throw new ArgumentNullException(nameof(UpdateSetting.Table));
+
             await this.OnConfiguring();
             using var tran = await this.connection.BeginTransactionAsync();
+            var columns = rows.Table.Columns;
+            var fieldStr = string.Join(',', columns.Select(c => c.Field));
+            var paraStr = string.Join(',', columns.Select(c => $"${c.Field}"));
+            var sql = $"INSERT INTO {rows.Table.Name} ({fieldStr}) VALUES({paraStr})";
+            var cmd = new SqliteCommand(sql, this.connection);
+            var recount = 0;
 
-            try
+            foreach (var row in rows)
             {
-                var columns = rows.Table.Columns;
-                var fieldStr = string.Join(',', columns.Select(c => c.Field));
-                var paraStr = string.Join(',', columns.Select(c => $"${c.Field}"));
-                var sql = $"INSERT INTO {rows.Table.Name} ({fieldStr}) VALUES({paraStr})";
-                var cmd = new SqliteCommand(sql, this.connection);
-                var recount = 0;
+                cmd.Parameters?.Clear();
 
-                foreach (var row in rows)
-                {
-                    cmd.Parameters?.Clear();
+                foreach (var col in columns)
+                    cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
 
-                    foreach (var col in columns)
-                        cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
-
-                    recount += await cmd.ExecuteNonQueryAsync();
-                }
-
-                await tran.CommitAsync();
+                recount += await cmd.ExecuteNonQueryAsync();
             }
-            catch (Exception ex)
-            {
-                await tran.RollbackAsync();
-                throw;
-            }
+
+            await tran.CommitAsync();
         }
 
         /// <summary>
@@ -195,23 +194,48 @@ namespace SQLiteLib
         /// <returns>Task</returns>
         public async Task AddColumnsAsync(UpdateSetting setting)
         {
+            if (string.IsNullOrWhiteSpace(setting.Table))
+                throw new ArgumentNullException(nameof(UpdateSetting.Table));
+
+            if (setting.AddColumns == null || !setting.AddColumns.Any())
+                throw new ArgumentNullException(nameof(UpdateSetting.AddColumns));
+
             await this.OnConfiguring();
+            var cmd = new SqliteCommand() { Connection = this.connection };
+            var recount = 0;
 
-            try
+            foreach (var col in setting.AddColumns)
             {
-                var cmd = new SqliteCommand() { Connection = this.connection };
-                var recount = 0;
+                cmd.CommandText = $"ALTER TABLE {setting.Table} ADD COLUMN {col.Field} {Enum.GetName(GetSqliteType(col.TypeCode))} ";
+                recount += await cmd.ExecuteNonQueryAsync();
+            }
+        }
 
-                foreach (var col in setting.AddColumns)
-                {
-                    cmd.CommandText = $"ALTER TABLE {setting.Table.Name} ADD COLUMN {col.Field} {Enum.GetName(GetSqliteType(col.TypeCode))} ";
-                    recount += await cmd.ExecuteNonQueryAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
+        /// <summary>
+        /// 删除数据
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        public async Task DelAsync(UpdateSetting setting)
+        {
+            if (string.IsNullOrWhiteSpace(setting.Table))
+                throw new ArgumentNullException(nameof(UpdateSetting.Table));
+
+            if (setting.Parameters == null || !setting.Parameters.Any())
+                throw new ArgumentNullException(nameof(UpdateSetting.Parameters));
+
+            await this.OnConfiguring();
+            using var tran = await this.connection.BeginTransactionAsync();
+            var sqlBuilder = new StringBuilder();
+            var cmd = new SqliteCommand() { Connection = this.connection };
+            var recount = 0;
+
+            sqlBuilder.Append($"DELTE FROM {setting.Table} ");
+            sqlBuilder.Append(Condition.BuildWhereSql(setting.Parameters));
+
+            cmd.CommandText = sqlBuilder.ToString();
+            recount += await cmd.ExecuteNonQueryAsync();
+            await tran.CommitAsync();
         }
 
         /// <summary>
@@ -222,59 +246,195 @@ namespace SQLiteLib
         /// <returns></returns>
         public async Task UpdateAsync(UpdateSetting setting)
         {
+            if (string.IsNullOrWhiteSpace(setting.Table))
+                throw new ArgumentNullException(nameof(UpdateSetting.Table));
+
+            if (setting.UpdateColumns == null || !setting.UpdateColumns.Any())
+                throw new ArgumentNullException(nameof(UpdateSetting.UpdateColumns));
+
+            if (setting.PrimaryColumns == null || !setting.PrimaryColumns.Any())
+                throw new ArgumentNullException(nameof(UpdateSetting.PrimaryColumns));
+
+            if (setting.AddColumns?.Any() ?? false)
+                await this.AddColumnsAsync(setting);
+
             await this.OnConfiguring();
             using var tran = await this.connection.BeginTransactionAsync();
+            var sqlBuilder = new StringBuilder();
+            var cmd = new SqliteCommand() { Connection = this.connection };
+            var recount = 0;
 
-            try
+            sqlBuilder.Append($"UPDATE {setting.Table} SET ");
+
+            for (int i = 0; i < setting.UpdateColumns.Count; i++)
             {
-                var sqlBuilder = new StringBuilder();
-                var cmd = new SqliteCommand() { Connection = this.connection };
-                var recount = 0;
+                if (i > 0)
+                    sqlBuilder.Append($",");
 
-                sqlBuilder.Append($"UPDATE {setting.Table.Name} SET ");
-
-                for (int i = 0; i < setting.UpdateColumns.Count; i++)
-                {
-                    if (i > 0)
-                        sqlBuilder.Append($",");
-
-                    var col = setting.UpdateColumns[i];
-                    sqlBuilder.Append($"{col.Field} = ${col.Field}");
-                }
-
-                sqlBuilder.Append($" WHERE ");
-
-                for (int i = 0; i < setting.PrimaryColumns.Count; i++)
-                {
-                    if (i > 0)
-                        sqlBuilder.Append($" {QueryLogic.AND} ");
-
-                    var col = setting.PrimaryColumns[i];
-                    sqlBuilder.Append($"{col.Field} = ${col.Field}");
-                }
-
-                cmd.CommandText = sqlBuilder.ToString();
-
-                foreach (var row in setting.Rows)
-                {
-                    cmd.Parameters?.Clear();
-
-                    foreach (var col in setting.UpdateColumns)
-                        cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
-
-                    foreach (var col in setting.PrimaryColumns)
-                        cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
-
-                    recount += await cmd.ExecuteNonQueryAsync();
-                }
-
-                await tran.CommitAsync();
+                var col = setting.UpdateColumns[i];
+                sqlBuilder.Append($"{col.Field} = ${col.Field}");
             }
-            catch (Exception ex)
+
+            sqlBuilder.Append($" WHERE ");
+
+            for (int i = 0; i < setting.PrimaryColumns.Count; i++)
             {
-                await tran.RollbackAsync();
-                throw;
+                if (i > 0)
+                    sqlBuilder.Append($" {LogicMode.AND} ");
+
+                var col = setting.PrimaryColumns[i];
+                sqlBuilder.Append($"{col.Field} = ${col.Field}");
             }
+
+            cmd.CommandText = sqlBuilder.ToString();
+
+            foreach (var row in setting.Rows)
+            {
+                cmd.Parameters?.Clear();
+
+                foreach (var col in setting.UpdateColumns)
+                    cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
+
+                foreach (var col in setting.PrimaryColumns)
+                    cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
+
+                recount += await cmd.ExecuteNonQueryAsync();
+            }
+
+            await tran.CommitAsync();
+        }
+
+        /// <summary>
+        /// 合并行
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
+        public async Task MergeRowsAsync(UpdateSetting setting)
+        {
+            if (string.IsNullOrWhiteSpace(setting.Table))
+                throw new ArgumentNullException(nameof(UpdateSetting.Table));
+
+            if (!(setting.Rows?.Any() ?? false))
+                throw new ArgumentNullException(nameof(UpdateSetting.Rows));
+
+            await this.OnConfiguring();
+
+            if (setting.AddColumns?.Any() ?? false)
+                await this.AddColumnsAsync(setting);
+
+            await this.InsertAsync(setting.Rows);
+        }
+
+        /// <summary>
+        /// 合并列
+        /// </summary>
+        /// <param name="setting">MergeSetting</param>
+        /// <returns>Task</returns> 
+        public async Task MergeColumns(MergeSetting setting)
+        {
+            setting.Table ??= setting.LeftTable;
+
+            if (string.IsNullOrWhiteSpace(setting.LeftTable))
+                throw new ArgumentNullException(nameof(MergeSetting.RightTable));
+
+            if (string.IsNullOrWhiteSpace(setting.RightTable))
+                throw new ArgumentNullException(nameof(MergeSetting.RightTable));
+
+            if (!(setting.LeftColumns?.Any() ?? false))
+                throw new ArgumentNullException(nameof(MergeSetting.LeftColumns));
+
+            if (!(setting.RightColumns?.Any() ?? false))
+                throw new ArgumentNullException(nameof(MergeSetting.RightColumns));
+
+            if (!(setting.MacthCloumns?.Any() ?? false))
+                throw new ArgumentNullException(nameof(MergeSetting.MacthCloumns));
+
+            await this.OnConfiguring();
+
+            #region Rename
+
+            var rename = $"{setting.LeftTable}_{DateTime.Now:MMddHHmmss}";
+            await this.ReNameAsync(setting.LeftTable, rename);
+            setting.LeftTable = rename;
+
+            #endregion
+
+            #region Build Sql
+
+            var sqlBuilder = new StringBuilder();
+            var leftFields = setting.LeftColumns?.Select(f => $"L.{f.Field}");
+            var rightFields = setting.RightColumns?.Select(f => $"R.{f.Field}");
+            sqlBuilder.Append($"CREATE TABLE {setting.Table} AS SELECT ");
+
+            if (leftFields?.Any() ?? false)
+                sqlBuilder.Append(string.Join(',', leftFields));
+
+            if (rightFields?.Any() ?? false)
+                sqlBuilder.Append(string.Join(',', rightFields));
+
+            sqlBuilder.Append($" FROM {setting.LeftTable} L ");
+
+            switch (setting.Join)
+            {
+                case JoinMode.RIGHT_JOIN:
+                    sqlBuilder.Append($"RIGHT JOIN ");
+                    break;
+                case JoinMode.LEFT_JOIN:
+                    sqlBuilder.Append($"LEFT JOIN ");
+                    break;
+                case JoinMode.INNER_JOIN:
+                default:
+                    sqlBuilder.Append($"INNER JOIN ");
+                    break;
+            }
+
+            sqlBuilder.Append($"{setting.RightTable} R ON ");
+
+            for (int i = 0; i < setting.MacthCloumns.Count; i++)
+            {
+                var exp = setting.MacthCloumns[i];
+                sqlBuilder.Append($" L.{exp.Left} =  R.{exp.right} ");
+            }
+
+            #endregion
+
+            var cmd = new SqliteCommand() { Connection = this.connection, CommandText = sqlBuilder.ToString() };
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// 删除数据表
+        /// </summary>
+        /// <param name="table">需要删除的数据表名</param>
+        /// <returns>Task</returns>
+        public async Task DropAsync(string table)
+        {
+            if (string.IsNullOrWhiteSpace(table))
+                throw new ArgumentNullException(nameof(table));
+
+            await this.OnConfiguring();
+            var cmd = new SqliteCommand() { Connection = this.connection };
+
+            cmd.CommandText = $"DROP TABLE {table} ";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// 数据表重命名
+        /// </summary>
+        /// <param name="table">需要删除的数据表名</param>
+        /// <returns>Task</returns>
+        public async Task RenameAsync(string table, string rename)
+        {
+            if (string.IsNullOrWhiteSpace(table))
+                throw new ArgumentNullException(nameof(table));
+
+            await this.OnConfiguring();
+            var cmd = new SqliteCommand() { Connection = this.connection };
+
+            cmd.CommandText = $"ALTER TABLE {table} RENAME TO {rename}";
+            await cmd.ExecuteNonQueryAsync();
         }
 
         #endregion

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SQLiteEFCore.Shared.DB
+namespace SQLiteLib
 {
-    public static class QueryOrderModel
+    public static class OrderModel
     {
         public const string DESC = "DESC";
 
