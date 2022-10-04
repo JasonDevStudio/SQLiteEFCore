@@ -14,7 +14,7 @@ namespace SQLiteLib
 
         /// <summary>
         /// 数据表名
-        /// </summary> 
+        /// </summary>
         public string Table { get; set; }
 
         /// <summary>
@@ -31,15 +31,20 @@ namespace SQLiteLib
         /// 需要更新数据的表字段集合
         /// </summary>
         public IDataColumnCollection LeftColumns { get; set; }
-         
+
         /// <summary>
         /// 需要新增的数据列
         /// </summary>
         public IDataColumnCollection RightColumns { get; set; }
 
         /// <summary>
+        /// 需要新增的数据列
+        /// </summary>
+        public IDataColumnCollection NewColumns { get; set; }
+
+        /// <summary>
         /// 匹配的列
         /// </summary>
-        public List<(IDataColumn Left, IDataColumn right)> MacthCloumns { get; set; } 
+        public List<(IDataColumn Left, IDataColumn right)> MacthCloumns { get; set; }
     }
 }

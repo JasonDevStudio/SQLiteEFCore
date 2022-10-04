@@ -22,6 +22,16 @@
         string Name { get; set; }
 
         /// <summary>
+        /// 是否主键
+        /// </summary>
+        bool IsPK { get; set; }
+
+        /// <summary>
+        /// 是否自增
+        /// </summary>
+        bool IsAutoincrement { get; set; }
+
+        /// <summary>
         /// Origin Table ID
         /// </summary>
         string OriginTableId { get; set; }
@@ -39,12 +49,12 @@
         /// <summary>
         /// Column Origin Index
         /// </summary>
-        short ColumnIndex { get; set; }
+        int ColumnIndex { get; set; }
 
         /// <summary>
         /// Column Dispaly Index
         /// </summary>
-        short VisbleIndex { get; set; }
+        int VisbleIndex { get; set; }
 
         /// <summary>
         /// Data type
@@ -54,6 +64,6 @@
         /// <summary>
         /// 表达式
         /// </summary>
-        string Expression { get; set; } 
+        string Expression { get; set; }
     }
 }

@@ -110,26 +110,37 @@ namespace SQLiteLib
             {
                 case LogicMode.Like:
                     return this.BuildLikeSql();
+
                 case LogicMode.IN:
                     return this.BuildINSql();
+
                 case LogicMode.LessThanOrEqual:
                     return this.BuildLessThanOrEqualSql();
+
                 case LogicMode.LessThan:
                     return this.BuildLessThanSql();
+
                 case LogicMode.GreaterThanOrEqual:
                     return this.BuildGreaterThanOrEqualSql();
+
                 case LogicMode.GreaterThan:
                     return this.BuildGreaterThanSql();
+
                 case LogicMode.Between:
                     return this.BuildBetweenSql();
+
                 case LogicMode.NotBetween:
                     return this.BuildNotBetweenSql();
+
                 case LogicMode.IsNull:
                     return this.BuildIsNullSql();
+
                 case LogicMode.IsNotNull:
                     return this.BuildIsNotNullSql();
+
                 case LogicMode.NotEqual:
                     return this.BuildNotEqualSql();
+
                 case LogicMode.Equal:
                 default:
                     return this.BuildEqualSql();

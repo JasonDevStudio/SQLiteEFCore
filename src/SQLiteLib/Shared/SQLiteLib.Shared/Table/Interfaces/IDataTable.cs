@@ -16,6 +16,11 @@
         string Name { get; set; }
 
         /// <summary>
+        /// Sqlite Table Name
+        /// </summary>
+        string SqliteTable { get; set; }
+
+        /// <summary>
         /// 数据行数量
         /// </summary>
         int RowCount { get; }
@@ -43,19 +48,93 @@
         IDataRow this[int index] { get; }
 
         /// <summary>
-        /// 刷新图表
-        /// </summary>
-        void Reflash();
-
-        /// <summary>
-        /// 新增数据
-        /// </summary>
-        void BulkInsert();
-
-        /// <summary>
         /// 创建新数据行
         /// </summary>
         /// <returns>IDataRow</returns>
         IDataRow NewRow();
+
+        /// <summary>
+        /// 刷新图表
+        /// </summary>
+        Task ReflashAsync();
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <returns>Task</returns>
+        Task WriteAsync();
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <param name="rows">需要写入数据库的数据行集合</param>
+        /// <returns>Task</returns>
+        Task InsertAsync(IDataRowCollection rows);
+
+        /// <summary>
+        /// 新增数据列
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        Task AddColumnsAsync(UpdateSetting setting);
+
+        /// <summary>
+        /// 删除数据
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        Task DelAsync(UpdateSetting setting);
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <param name="columns">新增的数据列集合</param>
+        /// <param name="rows">需要写入数据库的数据行集合</param>
+        /// <returns></returns>
+        Task UpdateAsync(UpdateSetting setting);
+
+        /// <summary>
+        /// 合并行
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
+        Task MergeRowsAsync(UpdateSetting setting);
+
+        /// <summary>
+        /// 合并行
+        /// </summary>
+        /// <param name="setting">MergeSetting</param>
+        /// <returns>Task</returns>
+        /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
+        Task MergeRowsAsync(MergeSetting setting);
+
+        /// <summary>
+        /// 合并列
+        /// </summary>
+        /// <param name="setting">MergeSetting</param>
+        /// <returns>Task</returns>
+        Task MergeColumnsAsync(MergeSetting setting);
+
+        /// <summary>
+        /// 删除数据表
+        /// </summary>
+        /// <param name="table">需要删除的数据表名</param>
+        /// <returns>Task</returns>
+        Task DropAsync(string table = null);
+
+        /// <summary>
+        /// 数据表重命名
+        /// </summary>
+        /// <param name="table">需要删除的数据表名</param>
+        /// <returns>Task</returns>
+        Task RenameAsync(string table, string rename);
+
+        /// <summary>
+        /// 查询数据
+        /// </summary>
+        /// <param name="setting">QuerySetting</param>
+        /// <returns>IDataRowCollection</returns>
+        Task<IDataRowCollection> QueryAsync(QuerySetting setting);
     }
 }

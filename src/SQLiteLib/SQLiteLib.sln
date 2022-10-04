@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLiteLib", "Lib\SQLiteLib\
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SQLiteLib.Shared", "Shared\SQLiteLib.Shared\SQLiteLib.Shared.shproj", "{4E2BFFEC-5A9B-4177-8F49-A16E8C5CD55A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteLib.Tests", "Tests\SqliteLib.Tests\SqliteLib.Tests.csproj", "{68C71148-6A97-4321-8FC7-474A99B69212}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,6 +25,10 @@ Global
 		{66BCB97B-A41D-475E-AB12-E6892656FE81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{66BCB97B-A41D-475E-AB12-E6892656FE81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{66BCB97B-A41D-475E-AB12-E6892656FE81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68C71148-6A97-4321-8FC7-474A99B69212}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68C71148-6A97-4321-8FC7-474A99B69212}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68C71148-6A97-4321-8FC7-474A99B69212}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68C71148-6A97-4321-8FC7-474A99B69212}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -30,6 +36,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{66BCB97B-A41D-475E-AB12-E6892656FE81} = {B5386B1D-5DC7-406E-A60D-263556A3318C}
 		{4E2BFFEC-5A9B-4177-8F49-A16E8C5CD55A} = {3E6B3079-071F-4448-888E-1A0FEBEDD325}
+		{68C71148-6A97-4321-8FC7-474A99B69212} = {19553B58-4625-4438-9897-1D956A7F497B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DE575630-5A04-4479-A10F-2AFD6A962D1B}

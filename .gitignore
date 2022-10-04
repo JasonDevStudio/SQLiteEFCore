@@ -6,3 +6,5 @@
 /.vs
 /src/SQLiteLib/Lib/SQLiteLib/bin/Debug/net6.0
 /src/SQLiteLib/Lib/SQLiteLib/obj
+/src/SQLiteLib/Tests/SqliteLib.Tests/bin/Debug/net6.0
+/src/SQLiteLib/Tests/SqliteLib.Tests/obj

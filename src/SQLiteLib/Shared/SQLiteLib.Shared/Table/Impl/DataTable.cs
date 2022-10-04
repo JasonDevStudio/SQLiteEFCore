@@ -5,8 +5,20 @@ namespace SQLiteLib.Table.Impl
     /// <summary>
     /// IDataTable
     /// </summary>
-    public class DataTable : IDataTable
+    public partial class DataTable : IDataTable
     {
+        #region 属性，成员
+
+        /// <summary>
+        /// 数据库文件地址
+        /// </summary>
+        public static string DBPath { get; set; }
+
+        /// <summary>
+        /// 数据上下文
+        /// </summary>
+        private DBContext dbcontext;
+
         /// <summary>
         /// Id
         /// </summary>
@@ -18,14 +30,19 @@ namespace SQLiteLib.Table.Impl
         public string Name { get; set; }
 
         /// <summary>
+        /// 本地数据库表名
+        /// </summary>
+        public string SqliteTable { get; set; }
+
+        /// <summary>
         /// 数据行数量
         /// </summary>
-        public int RowCount { get; }
+        public int RowCount => this.Rows?.Count ?? 0;
 
         /// <summary>
         /// 数据列数量
         /// </summary>
-        public int ColumnCount { get; }
+        public int ColumnCount => this.Columns?.Count ?? 0;
 
         /// <summary>
         /// 数据列集合
@@ -44,20 +61,157 @@ namespace SQLiteLib.Table.Impl
         /// <returns>IDataRow</returns>
         public IDataRow this[int index] => this.Rows[index];
 
-        /// <summary>
-        /// 刷新图表
-        /// </summary>
-        public void Reflash() { }
+        #endregion 属性，成员
 
         /// <summary>
-        /// 新增数据
+        /// 构造函数
         /// </summary>
-        public void BulkInsert() { }
+        public DataTable()
+        {
+            this.dbcontext = new DBContext() { DBPath = DBPath };
+            this.Id = Guid.NewGuid().ToString();
+            this.Rows = new DataRowCollection() { Table = this };
+            this.Columns = new DataColumnCollection { Table = this };
+        }
+
+        #region Methods
+
+        /// <summary>
+        /// 创建数据表
+        /// </summary>
+        /// <param name="Name">数据表明</param>
+        /// <param name="SqliteTable">对应本地Sqlite 数据表明</param>
+        /// <param name="columns">数据列集合</param>
+        /// <returns>IDataTable</returns>
+        public static async Task<IDataTable> CreateTableAsync(string Name, string SqliteTable, IDataColumnCollection columns)
+        {
+            var table = new DataTable()
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = Name,
+                SqliteTable = SqliteTable,
+                Columns = columns,
+            };
+
+            foreach (var col in columns)
+            {
+                col.OriginTableId = table.Id;
+                col.Table = table;
+            }
+
+            table.dbcontext.DBPath = DBPath;
+            await table.dbcontext.CreateTableAsync(table);
+
+            return table;
+        }
 
         /// <summary>
         /// 创建数据行
         /// </summary>
         /// <returns>IDataRow</returns>
         public IDataRow NewRow() => new DataRow() { Table = this, RowIndex = this.RowCount, Values = new object[this.ColumnCount] };
+
+        /// <summary>
+        /// 刷新图表
+        /// </summary>
+        public async Task ReflashAsync()
+        {
+            // todo: 调用 DataSource 刷新数据
+            await Task.Factory.StartNew(() => Console.WriteLine("调用 DataSource 刷新数据"));
+        }
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <returns>Task</returns>
+        public async Task WriteAsync() => await this.dbcontext.InsertAsync(this.Rows);
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <param name="rows">需要写入数据库的数据行集合</param>
+        /// <returns>Task</returns>
+        public async Task InsertAsync(IDataRowCollection rows) => await this.dbcontext.InsertAsync(rows);
+
+        /// <summary>
+        /// 新增数据列
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        public async Task AddColumnsAsync(UpdateSetting setting)
+        {
+            await this.dbcontext.AddColumnsAsync(setting);
+
+            foreach (var col in setting.NewColumns)
+            {
+                if (!this.Columns.Any(m => m.Name == col.Name && m.Field == col.Field))
+                    this.Columns.Add(col);
+            }
+        }
+
+        /// <summary>
+        /// 删除数据
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        public async Task DelAsync(UpdateSetting setting) => await this.dbcontext.DelAsync(setting);
+
+        /// <summary>
+        /// 批量写入数据库
+        /// </summary>
+        /// <param name="columns">新增的数据列集合</param>
+        /// <param name="rows">需要写入数据库的数据行集合</param>
+        /// <returns></returns>
+        public async Task UpdateAsync(UpdateSetting setting) => await this.dbcontext.UpdateAsync(setting);
+
+        /// <summary>
+        /// 合并行
+        /// </summary>
+        /// <param name="setting">UpdateSetting</param>
+        /// <returns>Task</returns>
+        /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
+        public async Task MergeRowsAsync(UpdateSetting setting) => await this.dbcontext.MergeRowsAsync(setting);
+
+        /// <summary>
+        /// 合并列
+        /// </summary>
+        /// <param name="setting">MergeSetting</param>
+        /// <returns>Task</returns>
+        public async Task MergeColumnsAsync(MergeSetting setting) => await this.dbcontext.MergeColumnsAsync(setting);
+
+        /// <summary>
+        /// 合并行
+        /// </summary>
+        /// <param name="setting">MergeSetting</param>
+        /// <returns>Task</returns>
+        /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
+        public async Task MergeRowsAsync(MergeSetting setting) => await this.dbcontext.MergeRowsAsync(setting);
+
+        /// <summary>
+        /// 删除数据表
+        /// </summary>
+        /// <param name="table">需要删除的数据表名</param>
+        /// <returns>Task</returns>
+        public async Task DropAsync(string table = null) => await this.dbcontext.DropAsync(table ?? this.SqliteTable);
+
+        /// <summary>
+        /// 数据表重命名
+        /// </summary>
+        /// <param name="table">需要删除的数据表名</param>
+        /// <returns>Task</returns>
+        public async Task RenameAsync(string rename, string originName = null)
+        {
+            await this.dbcontext.RenameAsync(originName ?? this.SqliteTable, rename);
+            this.SqliteTable = rename;
+        }
+
+        /// <summary>
+        /// 查询数据
+        /// </summary>
+        /// <param name="setting">QuerySetting</param>
+        /// <returns>IDataRowCollection</returns>
+        public async Task<IDataRowCollection> QueryAsync(QuerySetting setting) => await this.dbcontext.QueryAsync(setting);
+
+        #endregion Methods
     }
 }

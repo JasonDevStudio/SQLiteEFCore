@@ -14,7 +14,7 @@ namespace SQLiteLib
 
         /// <summary>
         /// 数据表
-        /// </summary> 
+        /// </summary>
         public string Table { get; set; }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace SQLiteLib
         /// <summary>
         /// 需要新增的数据列
         /// </summary>
-        public IDataColumnCollection AddColumns { get; set; }
+        public IDataColumnCollection NewColumns { get; set; }
 
         /// <summary>
         /// 需要删除的数据列

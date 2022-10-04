@@ -5,7 +5,7 @@ namespace SQLiteLib.Table.Impl
     /// <summary>
     /// IDataColumn
     /// </summary>
-    public class DataColumn : IDataColumn
+    public partial class DataColumn : IDataColumn
     {
         /// <summary>
         /// DataTable
@@ -24,6 +24,16 @@ namespace SQLiteLib.Table.Impl
         public string Name { get; set; }
 
         /// <summary>
+        /// 是否主键
+        /// </summary>
+        public bool IsPK { get; set; }
+
+        /// <summary>
+        /// 是否自增
+        /// </summary>
+        public bool IsAutoincrement { get; set; }
+
+        /// <summary>
         /// Origin Table ID
         /// </summary>
         public string OriginTableId { get; set; }
@@ -36,12 +46,12 @@ namespace SQLiteLib.Table.Impl
         /// <summary>
         /// Column Origin Index
         /// </summary>
-        public short ColumnIndex { get; set; }
+        public int ColumnIndex { get; set; }
 
         /// <summary>
         /// Column Dispaly Index
         /// </summary>
-        public short VisbleIndex { get; set; }
+        public int VisbleIndex { get; set; }
 
         /// <summary>
         /// Data type

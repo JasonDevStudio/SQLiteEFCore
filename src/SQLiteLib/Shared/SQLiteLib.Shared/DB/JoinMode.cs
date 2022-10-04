@@ -9,4 +9,3 @@
         INNER_JOIN = 3,
     }
 }
-

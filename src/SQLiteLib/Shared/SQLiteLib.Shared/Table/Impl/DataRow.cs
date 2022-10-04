@@ -5,7 +5,7 @@ namespace SQLiteLib.Table.Impl
     /// <summary>
     /// IDataRow
     /// </summary>
-    public class DataRow : IDataRow
+    public partial class DataRow : IDataRow
     {
         /// <summary>
         /// DataTable
@@ -22,7 +22,7 @@ namespace SQLiteLib.Table.Impl
         /// 数据结果集合
         /// </summary>
         public object[] Values { get; set; }
-         
+
         /// <summary>
         /// 索引器
         /// </summary>

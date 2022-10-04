@@ -26,7 +26,7 @@
         /// </summary>
         /// <param name="index">列索引</param>
         /// <returns>object</returns>
-        object this[int index] { get;set; }
+        object this[int index] { get; set; }
 
         /// <summary>
         /// 索引器

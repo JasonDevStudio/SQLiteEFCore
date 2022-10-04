@@ -1,7 +1,7 @@
 ﻿namespace SQLiteLib
 {
     public static class LogicMode
-    { 
+    {
         public const string AND = "AND";
 
         public const string OR = "OR";
