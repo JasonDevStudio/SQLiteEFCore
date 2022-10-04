@@ -164,7 +164,9 @@ namespace SQLiteLib
                 var val = list[0];
                 if (Regex.IsMatch($"{val}", @"^[-+]?([0-9]+)([.]([0-9]+))?$"))
                 {
-                    var valStr = string.Join(',', list);
+                    var vals = new object[list.Count];
+                    list.CopyTo(vals, 0);
+                    var valStr = string.Join(',', vals);
                     return $"{this.DataColumn.Field} {LogicMode.IN} ({valStr}) ";
                 }
                 else

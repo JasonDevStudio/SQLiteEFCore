@@ -16,6 +16,8 @@ public static class Program
 {
     private static string DBPath = "";
     private static IDataTable table;
+    private static IDataTable rightTable;
+    private static IDataTable tmpTable;
     private static DataColumnCollection columns;
     private static DataColumnCollection tmpColumns;
     private static int Max1 = 100;
@@ -73,6 +75,12 @@ public static class Program
         AnsiConsole.Write(new Rule().Centered());
         AnsiConsole.Write(new Rule("Merge Table").Centered());
         await MergeTableTest();
+        AnsiConsole.Write(new Rule().Centered());
+        AnsiConsole.Write(new Rule("Merge Columns").Centered());
+        await MergeColumnsTest();
+        AnsiConsole.Write(new Rule().Centered());
+        AnsiConsole.Write(new Rule("Query Data").Centered());
+        await QueryAsync();
         AnsiConsole.Write(new Rule().Centered());
     }
 
@@ -209,7 +217,7 @@ public static class Program
 
         rightColumns.AddRange(tmColumns);
 
-        var rightTable = await DataTable.CreateTableAsync("RightDefectInfo", "RightDefectInfo", rightColumns);
+        rightTable = await DataTable.CreateTableAsync("RightDefectInfo", "RightDefectInfo", rightColumns);
 
         AnsiConsole.MarkupLine("[Green] Create right table end...[/]");
         AnsiConsole.MarkupLine("[Green] Start processing data...[/]");
@@ -253,5 +261,90 @@ public static class Program
         st.Restart();
         await rightTable.MergeRowsAsync(mergeSetting);
         AnsiConsole.MarkupLine($"[Green] Merge table to sqlite end, times {st.Elapsed.TotalSeconds} s, count {table.RowCount}.... [/]");
+    }
+
+    public static async Task MergeColumnsTest()
+    {
+        var columnIndex = 0;
+        AnsiConsole.MarkupLine("[Green] Start create right table...[/]");
+        var rightColumns = new DataColumnCollection();
+        rightColumns.Add(new DataColumn() { Name = "RowIndex", Field = "RowIndex", IsPK = true, IsAutoincrement = true, ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 });
+
+        var tmColumns = new DataColumnCollection()
+        {
+            new DataColumn() { Name = "FinalNumber", Field = "FinalNumber", ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 },
+            new DataColumn() { Name = "ReFinalNumber", Field = "ReFinalNumber", ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 }
+        };
+
+        rightColumns.AddRange(tmColumns);
+
+        tmpTable = await DataTable.CreateTableAsync("RightDefectInfo2", "RightDefectInfo2", rightColumns);
+
+        AnsiConsole.MarkupLine("[Green] Create right table end...[/]");
+        AnsiConsole.MarkupLine("[Green] Start processing data...[/]");
+
+        for (int i = 0; i < Max1; i++)
+        {
+            for (int j = 0; j < Max2; j++)
+            {
+                var row = tmpTable.NewRow();
+                row["RowIndex"] = tmpTable.RowCount;
+                row["FinalNumber"] = (i + 5) * (j + 7);
+                row["ReFinalNumber"] = (i + 2) * (j + 3);
+                tmpTable.Rows.Add(row);
+            }
+        }
+
+        AnsiConsole.MarkupLine($"[Green] Processing data end. count {tmpTable.RowCount} [/]");
+        AnsiConsole.MarkupLine($"[Green] Start write right table to sqlite.... [/]");
+        var st = Stopwatch.StartNew();
+        await tmpTable.WriteAsync();
+        st.Stop();
+        AnsiConsole.MarkupLine($"[Green] Write right table to sqlite end, times {st.Elapsed.TotalSeconds} s, count {tmpTable.RowCount}.... [/]");
+        AnsiConsole.MarkupLine($"[Green] Start merge columns to sqlite.... [/]");
+        var mathColumns = new List<(IDataColumn Left, IDataColumn Right)>();
+        mathColumns.Add((table.Columns["RowIndex"], rightTable.Columns["RowIndex"]));
+
+        var mergeSetting = new MergeSetting() { LeftColumns = table.Columns, RightColumns = tmpTable.Columns, LeftTable = table.SqliteTable, RightTable = tmpTable.SqliteTable, NewColumns = tmColumns, MacthCloumns = mathColumns };
+        st.Restart();
+        await rightTable.MergeColumnsAsync(mergeSetting);
+        AnsiConsole.MarkupLine($"[Green] Merge columns to sqlite end, times {st.Elapsed.TotalSeconds} s, count {table.RowCount}.... [/]");
+    }
+
+    public static async Task QueryAsync()
+    {
+        var st = Stopwatch.StartNew();
+        var setting = new QuerySetting()
+        {
+            Table = table,
+            Columns = table.Columns,
+        };
+
+        setting.Parameters = new List<Condition>();
+        setting.Parameters.Add(new Condition { DataColumn = table.Columns["Aera"], Binary = LogicMode.OR, Logic = LogicMode.IN, Value = new List<int> { 45, 35, 25, 15, 55, 65, 66, 58, 69, 10, 22, 12, 62, 71 } });
+        setting.Parameters.Add(new Condition { DataColumn = table.Columns["WaferId"], Binary = LogicMode.OR, Logic = LogicMode.Equal, Value = "SDS_6_9" });
+        setting.Parameters.Add(new Condition { DataColumn = table.Columns["RowIndex"], Binary = LogicMode.OR, Logic = LogicMode.LessThan, Value = 100 });
+
+        var rows = await table.QueryAsync(setting);
+
+        var ansiTable = new Table().Centered();
+        AnsiConsole.Live(ansiTable)
+            .Start(ctx =>
+            {
+                foreach (var col in table.Columns)
+                    ansiTable.AddColumns(col.Field);
+
+                ctx.Refresh();
+
+                foreach (var row in rows)
+                {
+                    var values = row.Values.Select(m => $"{m}").ToArray();
+                    ansiTable.AddRow(values);
+                    ctx.Refresh();
+                }
+            });
+
+        st.Stop();
+        AnsiConsole.MarkupLine($"[Green] Merge columns to sqlite end, times {st.Elapsed.TotalSeconds} s, count {rows.Count}.... [/]");
     }
 }

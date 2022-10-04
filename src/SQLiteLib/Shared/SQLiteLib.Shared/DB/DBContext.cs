@@ -150,6 +150,8 @@ namespace SQLiteLib
                 rows.Add(row);
             }
 
+            Console.WriteLine(sql);
+
             return rows;
         }
 
@@ -453,7 +455,7 @@ namespace SQLiteLib
             sqlBuilder.Append($"CREATE TABLE {setting.Table} AS SELECT ");
 
             if (leftFields?.Any() ?? false)
-                sqlBuilder.Append(string.Join(',', leftFields));
+                sqlBuilder.Append($"{string.Join(',', leftFields)},");
 
             if (rightFields?.Any() ?? false)
                 sqlBuilder.Append(string.Join(',', rightFields));
@@ -481,7 +483,7 @@ namespace SQLiteLib
             for (int i = 0; i < setting.MacthCloumns.Count; i++)
             {
                 var exp = setting.MacthCloumns[i];
-                sqlBuilder.Append($" L.{exp.Left} =  R.{exp.right} ");
+                sqlBuilder.Append($" L.{exp.Left.Field} =  R.{exp.right.Field} ");
             }
 
             #endregion Build Sql
