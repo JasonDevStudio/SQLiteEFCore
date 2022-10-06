@@ -6,6 +6,12 @@
     public interface IDataTable
     {
         /// <summary>
+        /// 数据上下文
+        /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
+        DBContext Context { get; set; }
+
+        /// <summary>
         /// Id
         /// </summary>
         string Id { get; set; }

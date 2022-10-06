@@ -18,8 +18,8 @@ public static class Program
     private static IDataTable table;
     private static IDataTable rightTable;
     private static IDataTable tmpTable;
-    private static DataColumnCollection columns;
-    private static DataColumnCollection tmpColumns;
+    private static IDataColumnCollection columns;
+    private static IDataColumnCollection tmpColumns;
     private static int Max1 = 100;
     private static int Max2 = 1000;
 
@@ -54,38 +54,49 @@ public static class Program
         //        ctx.Refresh();
         //    });
 
+        GlobalService.Registers();
+
+        var rows = GlobalService.GetService<IDataRowCollection>();
+
+
         DBPath = Path.Combine(AppContext.BaseDirectory, "Data", "Sqlite.db");
         DataTable.DBPath = DBPath;
         var stype = new Style(foreground: Color.Orange1);
         AnsiConsole.Write(new FigletText("Sqlite Lib Test").Centered().Color(Color.Red));
-        AnsiConsole.Write(new Rule("Create Table").Centered());
+        AnsiConsole.Write(new Rule("[White]Create Table[/]").Centered());
         await CreateTableTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Create Data").Centered());
+        AnsiConsole.Write(new Rule("[White]Create Data[/]").Centered());
         await WriteTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Add Columns").Centered());
+        AnsiConsole.Write(new Rule("[White]Add Columns[/]").Centered());
         await AddColumnsTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Update Data").Centered());
+        AnsiConsole.Write(new Rule("[White]Update Data[/]").Centered());
         await UpdateTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Merge Rows").Centered());
+        AnsiConsole.Write(new Rule("[White]Merge Rows[/]").Centered());
         await MergeRowsTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Merge Table").Centered());
+        AnsiConsole.Write(new Rule("[White]Merge Table[/]").Centered());
         await MergeTableTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Merge Columns").Centered());
+        AnsiConsole.Write(new Rule("[White]Merge Columns[/]").Centered());
         await MergeColumnsTest();
         AnsiConsole.Write(new Rule().Centered());
-        AnsiConsole.Write(new Rule("Query Data").Centered());
+        AnsiConsole.Write(new Rule("[White]Query Data[/]").Centered());
         await QueryAsync();
         AnsiConsole.Write(new Rule().Centered());
     }
 
-    public static async Task CreateTableTest()
+    private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
+        AnsiConsole.Markup($"[red]{e.ExceptionObject}[/]"); // [World]
+    }
+
+    public static async Task CreateTableTest()
+    { 
+        //columns = GlobalService.GetService<IDataColumnCollection>();
         columns = new DataColumnCollection();
         columns.Add(new DataColumn() { Name = "RowIndex", Field = "RowIndex", IsPK = true, IsAutoincrement = true, ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
         columns.Add(new DataColumn() { Name = "RowKey", Field = "RowKey", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
@@ -144,7 +155,6 @@ public static class Program
 
         var rows = new DataRowCollection(table);
         var pkColumns = new DataColumnCollection(table, table.Columns.Where(m => m.IsPK).ToList());
-
         for (int i = 0; i < Max1; i++)
         {
             for (int j = 0; j < Max2; j++)
@@ -170,10 +180,9 @@ public static class Program
 
         var rows = new DataRowCollection(table);
         var rowIndex = table.RowCount;
-        var tmColumns = new DataColumnCollection(table)
-        {
-            new DataColumn() { Name = "ReclassNumber", Field = "ReclassNumber", ColumnIndex = table.ColumnCount, VisbleIndex = table.ColumnCount, TypeCode = TypeCode.Int32 }
-        };
+        var tmColumns = GlobalService.GetService<IDataColumnCollection>(); //new DataColumnCollection(table);
+        //tmColumns.Table = table;
+        tmColumns.Add(new DataColumn() { Name = "ReclassNumber", Field = "ReclassNumber", ColumnIndex = table.ColumnCount, VisbleIndex = table.ColumnCount, TypeCode = TypeCode.Int32 });
 
         table.Columns.AddRange(tmColumns);
 
@@ -210,10 +219,9 @@ public static class Program
 
         var rightColumns = table.Columns.Copy();
 
-        var tmColumns = new DataColumnCollection()
-        {
-            new DataColumn() { Name = "FinalBinNumber", Field = "FinalBinNumber", ColumnIndex = table.ColumnCount, VisbleIndex = table.ColumnCount, TypeCode = TypeCode.Int32 }
-        };
+        var tmColumns = GlobalService.GetService<IDataColumnCollection>();
+        tmColumns.Table = table;
+        tmColumns.Add(new DataColumn() { Name = "FinalBinNumber", Field = "FinalBinNumber", ColumnIndex = table.ColumnCount, VisbleIndex = table.ColumnCount, TypeCode = TypeCode.Int32 });
 
         rightColumns.AddRange(tmColumns);
 
@@ -270,11 +278,10 @@ public static class Program
         var rightColumns = new DataColumnCollection();
         rightColumns.Add(new DataColumn() { Name = "RowIndex", Field = "RowIndex", IsPK = true, IsAutoincrement = true, ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 });
 
-        var tmColumns = new DataColumnCollection()
-        {
-            new DataColumn() { Name = "FinalNumber", Field = "FinalNumber", ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 },
-            new DataColumn() { Name = "ReFinalNumber", Field = "ReFinalNumber", ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 }
-        };
+        var tmColumns = GlobalService.GetService<IDataColumnCollection>();
+        tmColumns.Table = table;
+        tmColumns.Add(new DataColumn() { Name = "FinalNumber", Field = "FinalNumber", ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 });
+        tmColumns.Add(new DataColumn() { Name = "ReFinalNumber", Field = "ReFinalNumber", ColumnIndex = columnIndex++, VisbleIndex = columnIndex, TypeCode = TypeCode.Int32 });
 
         rightColumns.AddRange(tmColumns);
 
@@ -331,17 +338,15 @@ public static class Program
         AnsiConsole.Live(ansiTable)
             .Start(ctx =>
             {
-                foreach (var col in table.Columns)
-                    ansiTable.AddColumns(col.Field);
-
+                table.Columns.ForEach(col => ansiTable.AddColumns(col.Field));
                 ctx.Refresh();
 
-                foreach (var row in rows)
+                rows.ForEach(row =>
                 {
                     var values = row.Values.Select(m => $"{m}").ToArray();
                     ansiTable.AddRow(values);
                     ctx.Refresh();
-                }
+                }); 
             });
 
         st.Stop();

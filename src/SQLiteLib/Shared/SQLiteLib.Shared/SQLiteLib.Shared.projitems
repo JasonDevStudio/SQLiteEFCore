@@ -14,6 +14,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)DB\LogicMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DB\Condition.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DB\UpdateSetting.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GlobalService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumn.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumnCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataRow.cs" />

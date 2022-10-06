@@ -90,7 +90,7 @@ namespace SQLiteLib
             }
             else
             {
-                this.ConnectionString = String.Format(ConnectionStringFormat, this.DBPath, this.Password);
+                this.ConnectionString = string.Format(ConnectionStringFormat, this.DBPath, this.Password);
             }
 
             this.connection = new SqliteConnection(this.ConnectionString);
@@ -129,7 +129,7 @@ namespace SQLiteLib
                 throw new ArgumentNullException(nameof(QuerySetting.Columns));
 
             await this.OnConfiguring();
-            var rows = new DataRowCollection() { Table = setting.Table };
+            var rows = GlobalService.GetService<IDataRowCollection>();
             var cmd = new SqliteCommand();
             var whereSql = Condition.BuildWhereSql(setting.Parameters);
             var orderSql = Condition.BuildOrderSql(setting.OrderFields);
@@ -152,6 +152,7 @@ namespace SQLiteLib
 
             Console.WriteLine(sql);
 
+            rows.Table = setting.Table;
             return rows;
         }
 
@@ -202,7 +203,7 @@ namespace SQLiteLib
         /// </summary>
         /// <param name="rows">需要写入数据库的数据行集合</param>
         /// <returns>Task</returns>
-        public async Task InsertAsync(IDataRowCollection rows)
+        public async Task<int> InsertAsync(IDataRowCollection rows)
         {
             if (!(rows?.Any() ?? false))
                 throw new ArgumentNullException(nameof(rows));
@@ -222,17 +223,16 @@ namespace SQLiteLib
             var cmd = new SqliteCommand(sql, this.connection, tran);
             var recount = 0;
 
-            foreach (var row in rows)
+            for (int i = 0; i < rows.Count; i++)
             {
+                var row = rows[i];
                 cmd.Parameters?.Clear();
-
-                foreach (var col in columns)
-                    cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
-
+                columns.ForEach(col => cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
                 recount += await cmd.ExecuteNonQueryAsync();
             }
-
+            
             await tran.CommitAsync();
+            return recount;
         }
 
         /// <summary>
@@ -252,11 +252,12 @@ namespace SQLiteLib
             var cmd = new SqliteCommand() { Connection = this.connection };
             var recount = 0;
 
-            foreach (var col in setting.NewColumns)
+            for (int i = 0; i < setting.NewColumns.Count; i++)
             {
+                var col = setting.NewColumns[i];
                 cmd.CommandText = $"ALTER TABLE {setting.Table} ADD COLUMN {col.Field} {Enum.GetName(GetSqliteType(col.TypeCode))} ";
                 recount += await cmd.ExecuteNonQueryAsync();
-            }
+            } 
         }
 
         /// <summary>
@@ -285,12 +286,12 @@ namespace SQLiteLib
         }
 
         /// <summary>
-        /// 批量写入数据库
+        /// 批量更新数据库
         /// </summary>
         /// <param name="columns">新增的数据列集合</param>
         /// <param name="rows">需要写入数据库的数据行集合</param>
         /// <returns></returns>
-        public async Task UpdateAsync(UpdateSetting setting)
+        public async Task<int> UpdateAsync(UpdateSetting setting)
         {
             if (string.IsNullOrWhiteSpace(setting.Table))
                 throw new ArgumentNullException(nameof(UpdateSetting.Table));
@@ -335,20 +336,17 @@ namespace SQLiteLib
 
             cmd.CommandText = sqlBuilder.ToString();
 
-            foreach (var row in setting.Rows)
+            for (int i = 0; i < setting.Rows.Count; i++)
             {
                 cmd.Parameters?.Clear();
-
-                foreach (var col in columns)
-                    cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
-
-                foreach (var col in setting.PrimaryColumns)
-                    cmd.Parameters.AddWithValue($"${col.Field}", row[col]);
-
+                var row = setting.Rows[i];
+                columns.ForEach(col=> cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
+                setting.PrimaryColumns.ForEach(col=> cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
                 recount += await cmd.ExecuteNonQueryAsync();
             }
-
+             
             await tran.CommitAsync();
+            return recount;
         }
 
         /// <summary>
