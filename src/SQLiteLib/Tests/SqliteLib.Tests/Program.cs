@@ -95,7 +95,7 @@ public static class Program
     }
 
     public static async Task CreateTableTest()
-    { 
+    {
         //columns = GlobalService.GetService<IDataColumnCollection>();
         columns = new DataColumnCollection();
         columns.Add(new DataColumn() { Name = "RowIndex", Field = "RowIndex", IsPK = true, IsAutoincrement = true, ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
@@ -141,7 +141,7 @@ public static class Program
     public static async Task AddColumnsTest()
     {
         AnsiConsole.MarkupLine("[Green] Start add datatable columns...[/]");
-        tmpColumns = new DataColumnCollection(table);
+        tmpColumns = new DataColumnCollection() { Table = table };
         tmpColumns.Add(new DataColumn() { Name = "Aera", Field = "Aera", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
         tmpColumns.Add(new DataColumn() { Name = "ClassNumber", Field = "ClassNumber", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
 
@@ -153,8 +153,10 @@ public static class Program
     {
         AnsiConsole.MarkupLine("[Green] Start processing data...[/]");
 
-        var rows = new DataRowCollection(table);
-        var pkColumns = new DataColumnCollection(table, table.Columns.Where(m => m.IsPK).ToList());
+        var rows = new DataRowCollection() { Table = table };
+        var pkColumns = new DataColumnCollection { Table = table };
+        pkColumns.AddRange(table.Columns.Where(m => m.IsPK).ToList());
+
         for (int i = 0; i < Max1; i++)
         {
             for (int j = 0; j < Max2; j++)
@@ -178,7 +180,7 @@ public static class Program
     {
         AnsiConsole.MarkupLine("[Green] Start processing data...[/]");
 
-        var rows = new DataRowCollection(table);
+        var rows = new DataRowCollection { Table = table };
         var rowIndex = table.RowCount;
         var tmColumns = GlobalService.GetService<IDataColumnCollection>(); //new DataColumnCollection(table);
         //tmColumns.Table = table;
@@ -346,7 +348,7 @@ public static class Program
                     var values = row.Values.Select(m => $"{m}").ToArray();
                     ansiTable.AddRow(values);
                     ctx.Refresh();
-                }); 
+                });
             });
 
         st.Stop();

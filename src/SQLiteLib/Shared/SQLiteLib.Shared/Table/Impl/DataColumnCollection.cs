@@ -14,27 +14,7 @@ namespace SQLiteLib.Table.Impl
         public DataColumnCollection()
         {
         }
-
-        /// <summary>
-        /// DataColumnCollection
-        /// </summary>
-        /// <param name="table">IDataTable</param>
-        public DataColumnCollection(IDataTable table) : this()
-        {
-            this.Table = table;
-        }
-
-        /// <summary>
-        /// DataColumnCollection
-        /// </summary>
-        /// <param name="table">IDataTable</param>
-        /// <param name="columns">数据列集合</param>
-        public DataColumnCollection(IDataTable table, List<IDataColumn> columns) : this()
-        {
-            this.Table = table;
-            this.Columns = columns;
-        }
-
+         
         /// <summary>
         /// 数据列集合
         /// </summary>

@@ -16,26 +16,6 @@ namespace SQLiteLib.Table.Impl
         }
 
         /// <summary>
-        /// DataRowCollection
-        /// </summary>
-        /// <param name="table">IDataTable</param>
-        public DataRowCollection(IDataTable table) : this()
-        {
-            //this.Table = table;
-        }
-
-        /// <summary>
-        /// DataRowCollection
-        /// </summary>
-        /// <param name="table">IDataTable</param>
-        /// <param name="rows">数据行</param>
-        public DataRowCollection(IDataTable table, List<IDataRow> rows) : this()
-        {
-            //this.Table = table;
-            this.Rows = rows;
-        }
-
-        /// <summary>
         /// 索引器
         /// </summary>
         /// <param name="index">索引</param>
@@ -60,7 +40,7 @@ namespace SQLiteLib.Table.Impl
         /// <summary>
         /// 数据行集合
         /// </summary>
-        public List<IDataRow> Rows { get; private set; }
+        public List<IDataRow> Rows { get; private set; } = new List<IDataRow>();
 
         /// <summary>
         /// 添加数据行
