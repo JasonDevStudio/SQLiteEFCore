@@ -142,5 +142,12 @@
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         Task<IDataRowCollection> QueryAsync(QuerySetting setting);
+
+        /// <summary>
+        /// Executes the non query asynchronous.
+        /// </summary>
+        /// <param name="sql">The SQL.</param>
+        /// <exception cref="ArgumentNullException">sql</exception>
+        Task ExecuteNonQueryAsync(string sql);
     }
 }

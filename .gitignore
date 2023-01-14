@@ -10,3 +10,5 @@
 /src/SQLiteLib/Tests/SqliteLib.Tests/obj
 /src/SQLiteLib/Tests/HDF5.ConsoleTest/bin/Debug/net6.0
 /src/SQLiteLib/Tests/HDF5.ConsoleTest/obj
+/src/SQLiteLib/Tests/SqliteLib.Tests/bin/Debug/net7.0
+/src/SQLiteLib/Lib/SQLiteLib/bin/Debug/net7.0

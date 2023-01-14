@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Data.Common;
+using System.Linq;
 using SQLiteLib.Table.Interfaces;
 
 namespace SQLiteLib.Table.Impl
@@ -8,6 +9,8 @@ namespace SQLiteLib.Table.Impl
     /// </summary>
     public partial class DataColumnCollection : IDataColumnCollection
     {
+        private Dictionary<string, IDataColumn> DicColumns = new Dictionary<string, IDataColumn>();
+
         /// <summary>
         /// DataColumnCollection
         /// </summary>
@@ -47,7 +50,7 @@ namespace SQLiteLib.Table.Impl
         /// </summary>
         /// <param name="field">字段名</param>
         /// <returns>object</returns>
-        public IDataColumn this[string field] => this.Columns.FirstOrDefault(m => m.Field == field);
+        public IDataColumn this[string field] => this.DicColumns[field];
 
         /// <summary>
         /// 复制数据列集合
@@ -59,7 +62,7 @@ namespace SQLiteLib.Table.Impl
             var colArry = new IDataColumn[this.Count];
             this.Columns.CopyTo(colArry, 0);
             columns.AddRange(colArry);
-            columns.Table = this.Table;
+            columns.Table = this.Table; 
             return columns;
         }
 
@@ -67,19 +70,31 @@ namespace SQLiteLib.Table.Impl
         /// 添加数据列
         /// </summary>
         /// <param name="column">IDataColumn</param> 
-        public void Add(IDataColumn column) => this.Columns.Add(column);
+        public void Add(IDataColumn column)
+        {
+            this.Columns.Add(column);
+            this.DicColumns[column.Field] = column;
+        }
 
         /// <summary>
         /// 批量添加数据列
         /// </summary>
         /// <param name="columns">数据列集合</param> 
-        public void AddRange(IEnumerable<IDataColumn> columns) => this.Columns.AddRange(columns);
+        public void AddRange(IEnumerable<IDataColumn> columns)
+        {
+            this.Columns.AddRange(columns);
+            this.DicColumns = this.Columns.ToDictionary(m=>m.Field, m=>m);
+        }
 
         /// <summary>
         /// 批量添加列
         /// </summary>
         /// <param name="columns">数据列集合</param>
-        public void AddRange(IDataColumnCollection columns) => this.Columns.AddRange(columns.Columns);
+        public void AddRange(IDataColumnCollection columns)
+        {
+            this.Columns.AddRange(columns.Columns);
+            this.DicColumns = this.Columns.ToDictionary(m => m.Field, m => m);
+        }
 
         /// <summary>
         /// Where

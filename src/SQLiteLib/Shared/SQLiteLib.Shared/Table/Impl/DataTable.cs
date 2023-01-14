@@ -99,7 +99,7 @@ namespace SQLiteLib.Table.Impl
                 col.OriginTableId = table.Id;
                 col.Table = table;
             }
-             
+
             await table.Context.CreateTableAsync(table);
 
             return table;
@@ -218,6 +218,13 @@ namespace SQLiteLib.Table.Impl
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         public async Task<IDataRowCollection> QueryAsync(QuerySetting setting) => await this.Context.QueryAsync(setting);
+
+        /// <summary>
+        /// Executes the non query asynchronous.
+        /// </summary>
+        /// <param name="sql">The SQL.</param>
+        /// <exception cref="ArgumentNullException">sql</exception>
+        public async Task ExecuteNonQueryAsync(string sql) => await this.Context.ExecuteNonQueryAsync(sql);
 
         #endregion Methods
     }

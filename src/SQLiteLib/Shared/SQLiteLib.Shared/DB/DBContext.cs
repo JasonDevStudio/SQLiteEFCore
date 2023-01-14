@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Xml.Linq;
 using Microsoft.Data.Sqlite;
 using SQLiteLib.Table.Impl;
 using SQLiteLib.Table.Interfaces;
@@ -521,6 +522,23 @@ namespace SQLiteLib
             var cmd = new SqliteCommand() { Connection = this.connection };
 
             cmd.CommandText = $"ALTER TABLE {table} RENAME TO {rename}";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Executes the non query asynchronous.
+        /// </summary>
+        /// <param name="sql">The SQL.</param>
+        /// <exception cref="ArgumentNullException">sql</exception>
+        public async Task ExecuteNonQueryAsync(string sql)
+        {
+            if (string.IsNullOrWhiteSpace(sql))
+                throw new ArgumentNullException(nameof(sql));
+
+            await this.OnConfiguring();
+            var cmd = new SqliteCommand() { Connection = this.connection };
+
+            cmd.CommandText = sql;
             await cmd.ExecuteNonQueryAsync();
         }
 

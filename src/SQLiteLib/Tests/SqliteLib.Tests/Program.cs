@@ -56,6 +56,68 @@ public static class Program
 
         GlobalService.Registers();
 
+        var tester = new ParaTableTest();
+        var stop = Stopwatch.StartNew();
+        var stype = new Style(foreground: Color.Orange1);
+        AnsiConsole.Write(new FigletText("Sqlite Lib Test").Centered().Color(Color.Red));
+
+        AnsiConsole.Write(new Rule($"[White]Create Table WAT_PARA_MAIN [/]").Centered());
+        var mainTable = await tester.CreateParaMainTableTestAsync("WAT_PARA_MAIN");
+        AnsiConsole.Write(new Rule().Centered());
+        AnsiConsole.Write(new Rule($"[White]Write Data WAT_PARA_MAIN[/]").Centered());
+        await tester.WriteParaMainTableAsync(mainTable);
+        AnsiConsole.Write(new Rule().Centered());
+
+        for (int i = 0; i < 50; i++)
+        {
+            AnsiConsole.Write(new Rule($"[White]Create Table WAT_PARA_{i} [/]").Centered());
+            var table = await tester.CreateParaDetailTableTestAsync($"WAT_PARA_{i}");
+            AnsiConsole.Write(new Rule().Centered());
+            AnsiConsole.Write(new Rule($"[White]Write Data WAT_PARA_{i}[/]").Centered());
+            await tester.WriteParaDetailAsync(table);
+            AnsiConsole.Write(new Rule().Centered()); 
+        }
+
+        AnsiConsole.Write(new Rule($"[White]Write Data WAT_PARA_VIEW[/]").Centered());
+        await tester.CreateParaViewAsync(mainTable, " WAT_PARA_VIEW");
+        AnsiConsole.Write(new Rule().Centered());
+
+        stop.Stop();
+        AnsiConsole.Write(new Rule($"[White]Sqlite Lib Test Times {stop.Elapsed.TotalSeconds} s[/]").Centered()); 
+    }
+
+    public static async Task Maisn(string[] args)
+    {
+        //AnsiConsole.Markup("[bold yellow]Hello[/] [red]World![/]");
+        //AnsiConsole.Markup("[red][[World]][/]"); // [World]
+
+        //string hello = "Hello [World]";
+        //AnsiConsole.MarkupInterpolated($"[red]{hello}[/]");
+
+        //AnsiConsole.Markup("[bold yellow on green]Hello[/]");
+        //AnsiConsole.Markup("[default on blue]World[/]");
+        //AnsiConsole.Markup("Hello :globe_showing_europe_africa:!");
+
+        //var table = new Table().Centered();
+
+        //AnsiConsole.Live(table)
+        //    .Start(ctx =>
+        //    {
+        //        table.AddColumn("Foo");
+        //        ctx.Refresh();
+
+        //        table.AddColumn("Bar");
+        //        ctx.Refresh();
+
+        //        table.AddRow("Baz", "[green]Qux[/]");
+        //        table.AddRow("Baz", "[green]Qux[/]");
+        //        table.AddRow("Baz", "[green]Qux[/]");
+        //        table.AddRow("Baz", "[green]Qux[/]");
+        //        ctx.Refresh();
+        //    });
+
+        GlobalService.Registers();
+
         var rows = GlobalService.GetService<IDataRowCollection>();
 
 
@@ -92,6 +154,22 @@ public static class Program
     private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         AnsiConsole.Markup($"[red]{e.ExceptionObject}[/]"); // [World]
+    }
+
+    public static async Task CreateTableForParameterTest()
+    {
+        //columns = GlobalService.GetService<IDataColumnCollection>();
+        columns = new DataColumnCollection();
+        columns.Add(new DataColumn() { Name = "RowIndex", Field = "RowIndex", IsPK = true, IsAutoincrement = true, ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
+        columns.Add(new DataColumn() { Name = "RowKey", Field = "RowKey", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
+        columns.Add(new DataColumn() { Name = "WaferId", Field = "WaferId", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
+        columns.Add(new DataColumn() { Name = "DieX", Field = "DieX", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
+        columns.Add(new DataColumn() { Name = "DieY", Field = "DieY", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
+        columns.Add(new DataColumn() { Name = "OrigX", Field = "OrigX", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
+        columns.Add(new DataColumn() { Name = "OrigY", Field = "OrigY", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
+        columns.Add(new DataColumn() { Name = "Product", Field = "Product", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
+
+        table = await DataTable.CreateTableAsync("DefectInfo", "DefectInfo", columns);
     }
 
     public static async Task CreateTableTest()
