@@ -1,7 +1,7 @@
 ﻿using System;
-using SQLiteLib.Table.Interfaces;
+using DataLib.Table.Interfaces;
 
-namespace SQLiteLib.Table.Impl
+namespace DataLib.Table.Impl
 {
     /// <summary>
     /// IDataColumnCollection
@@ -66,10 +66,11 @@ namespace SQLiteLib.Table.Impl
         /// <returns>IDataRowCollection</returns>
         public IDataRowCollection Copy()
         {
-            var rows = new DataRowCollection { Table = this.Table };
+            var rows = GlobalService.GetService<IDataRowCollection>();
             var rowArry = new IDataRow[this.Count];
             this.Rows.CopyTo(rowArry, 0);
-            rows.AddRange(rowArry); 
+            rows.AddRange(rowArry);
+            rows.Table = this.Table;
             return rows;
         }
 

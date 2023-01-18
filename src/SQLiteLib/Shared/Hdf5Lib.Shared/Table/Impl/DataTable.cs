@@ -1,7 +1,7 @@
 ﻿using System.Windows.Markup;
-using SQLiteLib.Table.Interfaces;
+using Hdf5Lib.Table.Interfaces;
 
-namespace SQLiteLib.Table.Impl
+namespace Hdf5Lib.Table.Impl
 {
     /// <summary>
     /// IDataTable

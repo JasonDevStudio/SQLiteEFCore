@@ -11,10 +11,10 @@ namespace HDF5.ConsoleTest
 {
     internal class Program
     {
-        public static int RowCount = 10;
-        public static int ParaCount { get; set; } = 50;
+        public static int RowCount = 1000000;
+        public static int ParaCount { get; set; } = 5000;
 
-        static void Main111(string[] args)
+        static void Main(string[] args)
         {
             int max = 100;
             AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
@@ -42,7 +42,7 @@ namespace HDF5.ConsoleTest
             AnsiConsole.Write(new Rule($"[White] times {st.Elapsed.TotalSeconds} s[/]").Centered());
         }
 
-        static void Main(string[] args)
+        static void Main123(string[] args)
         { 
             AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
             var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHHmmss}.H5");
@@ -95,9 +95,9 @@ namespace HDF5.ConsoleTest
             AnsiConsole.Write(new Rule($"[White] times {st.Elapsed.TotalSeconds} s[/]").Centered());
         }
 
-        static void Main333(string[] args)
+        static void MainObject(string[] args)
         {
-            int max = 1000000;
+            int max = 500000;
             AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
             var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHHmmss}.H5");
 

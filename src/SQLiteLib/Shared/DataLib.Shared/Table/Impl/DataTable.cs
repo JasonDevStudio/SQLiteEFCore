@@ -1,7 +1,6 @@
-﻿using System.Windows.Markup;
-using SQLiteLib.Table.Interfaces;
+﻿using DataLib.Table.Interfaces;
 
-namespace SQLiteLib.Table.Impl
+namespace DataLib.Table.Impl
 {
     /// <summary>
     /// IDataTable
@@ -18,7 +17,7 @@ namespace SQLiteLib.Table.Impl
         /// <summary>
         /// 数据上下文
         /// </summary>
-        public DBContext Context { get; set; }
+        public IDBContext Context { get; set; }
 
         /// <summary>
         /// Id
@@ -69,10 +68,12 @@ namespace SQLiteLib.Table.Impl
         /// </summary>
         public DataTable()
         {
-            this.Context = new DBContext() { DBPath = DBPath };
+            this.Context = GlobalService.GetService<IDBContext>();
             this.Id = Guid.NewGuid().ToString();
-            this.Rows = new DataRowCollection { Table = this };
-            this.Columns = new DataColumnCollection { Table = this };
+            this.Rows = new DataRowCollection();
+            this.Columns = new DataColumnCollection();
+            this.Rows.Table = this;
+            this.Columns.Table = this;
         }
 
         #region Methods
@@ -86,13 +87,11 @@ namespace SQLiteLib.Table.Impl
         /// <returns>IDataTable</returns>
         public static async Task<IDataTable> CreateTableAsync(string Name, string SqliteTable, IDataColumnCollection columns)
         {
-            var table = new DataTable
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = Name,
-                SqliteTable = SqliteTable,
-                Columns = columns
-            };
+            var table = new DataTable();
+            table.Id = Guid.NewGuid().ToString();
+            table.Name = Name;
+            table.SqliteTable = SqliteTable;
+            table.Columns = columns;
 
             foreach (var col in columns.Columns)
             {
@@ -145,7 +144,7 @@ namespace SQLiteLib.Table.Impl
         /// </summary>
         /// <param name="setting">UpdateSetting</param>
         /// <returns>Task</returns>
-        public async Task AddColumnsAsync(UpdateSetting setting)
+        public async Task AddColumnsAsync(IUpdateSetting setting)
         {
             await this.Context.AddColumnsAsync(setting);
 
@@ -161,7 +160,7 @@ namespace SQLiteLib.Table.Impl
         /// </summary>
         /// <param name="setting">UpdateSetting</param>
         /// <returns>Task</returns>
-        public async Task DelAsync(UpdateSetting setting) => await this.Context.DelAsync(setting);
+        public async Task DelAsync(IUpdateSetting setting) => await this.Context.DelAsync(setting);
 
         /// <summary>
         /// 批量写入数据库
@@ -169,7 +168,7 @@ namespace SQLiteLib.Table.Impl
         /// <param name="columns">新增的数据列集合</param>
         /// <param name="rows">需要写入数据库的数据行集合</param>
         /// <returns></returns>
-        public async Task UpdateAsync(UpdateSetting setting) => await this.Context.UpdateAsync(setting);
+        public async Task UpdateAsync(IUpdateSetting setting) => await this.Context.UpdateAsync(setting);
 
         /// <summary>
         /// 合并行
@@ -177,14 +176,14 @@ namespace SQLiteLib.Table.Impl
         /// <param name="setting">UpdateSetting</param>
         /// <returns>Task</returns>
         /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
-        public async Task MergeRowsAsync(UpdateSetting setting) => await this.Context.MergeRowsAsync(setting);
+        public async Task MergeRowsAsync(IUpdateSetting setting) => await this.Context.MergeRowsAsync(setting);
 
         /// <summary>
         /// 合并列
         /// </summary>
         /// <param name="setting">MergeSetting</param>
         /// <returns>Task</returns>
-        public async Task MergeColumnsAsync(MergeSetting setting) => await this.Context.MergeColumnsAsync(setting);
+        public async Task MergeColumnsAsync(IMergeSetting setting) => await this.Context.MergeColumnsAsync(setting);
 
         /// <summary>
         /// 合并行
@@ -192,7 +191,7 @@ namespace SQLiteLib.Table.Impl
         /// <param name="setting">MergeSetting</param>
         /// <returns>Task</returns>
         /// <exception cref="ArgumentNullException">UpdateSetting.Table, UpdateSetting.Rows</exception>
-        public async Task MergeRowsAsync(MergeSetting setting) => await this.Context.MergeRowsAsync(setting);
+        public async Task MergeRowsAsync(IMergeSetting setting) => await this.Context.MergeRowsAsync(setting);
 
         /// <summary>
         /// 删除数据表
@@ -217,7 +216,7 @@ namespace SQLiteLib.Table.Impl
         /// </summary>
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
-        public async Task<IDataRowCollection> QueryAsync(QuerySetting setting) => await this.Context.QueryAsync(setting);
+        public async Task<IDataRowCollection> QueryAsync(IQuerySetting setting) => await this.Context.QueryAsync(setting);
 
         /// <summary>
         /// Executes the non query asynchronous.

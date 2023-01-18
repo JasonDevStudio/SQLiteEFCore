@@ -76,23 +76,16 @@ namespace SQLiteLib
         /// </summary>
         protected async Task OnConfiguring()
         {
-            if (string.IsNullOrWhiteSpace(this.ConnectionString))
+            var builder = new SqliteConnectionStringBuilder($"Data Source={this.DBPath};Cache=Shared")
             {
-                var builder = new SqliteConnectionStringBuilder($"Data Source={this.DBPath};Cache=Shared")
-                {
-                    Mode = this.Mode,
-                    Password = this.Password,
-                    DefaultTimeout = this.DefaultTimeout,
-                    Pooling = this.Pooling,
-                    Cache = this.Cache,
-                };
+                Mode = this.Mode,
+                Password = this.Password,
+                DefaultTimeout = this.DefaultTimeout,
+                Pooling = this.Pooling,
+                Cache = this.Cache,
+            };
 
-                this.ConnectionString = builder.ToString();
-            }
-            else
-            {
-                this.ConnectionString = string.Format(ConnectionStringFormat, this.DBPath, this.Password);
-            }
+            this.ConnectionString = builder.ToString();
 
             this.connection = new SqliteConnection(this.ConnectionString);
 
@@ -216,6 +209,11 @@ namespace SQLiteLib
                 throw new ArgumentNullException(nameof(rows.Table.SqliteTable));
 
             await this.OnConfiguring();
+            var pragmaCmd = new SqliteCommand("PRAGMA journal_mode = WAL;", this.connection);
+            await pragmaCmd.ExecuteNonQueryAsync();
+            pragmaCmd = new SqliteCommand("PRAGMA synchronous = OFF;", this.connection);
+            await pragmaCmd.ExecuteNonQueryAsync();
+
             using var tran = this.connection.BeginTransaction();
             var columns = rows.Table.Columns;
             var fieldStr = string.Join(',', columns.Where(c => !c.IsAutoincrement).Select(c => c.Field));
@@ -231,7 +229,7 @@ namespace SQLiteLib
                 columns.ForEach(col => cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
                 recount += await cmd.ExecuteNonQueryAsync();
             }
-            
+
             await tran.CommitAsync();
             return recount;
         }
@@ -258,7 +256,7 @@ namespace SQLiteLib
                 var col = setting.NewColumns[i];
                 cmd.CommandText = $"ALTER TABLE {setting.Table} ADD COLUMN {col.Field} {Enum.GetName(GetSqliteType(col.TypeCode))} ";
                 recount += await cmd.ExecuteNonQueryAsync();
-            } 
+            }
         }
 
         /// <summary>
@@ -341,11 +339,11 @@ namespace SQLiteLib
             {
                 cmd.Parameters?.Clear();
                 var row = setting.Rows[i];
-                columns.ForEach(col=> cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
-                setting.PrimaryColumns.ForEach(col=> cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
+                columns.ForEach(col => cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
+                setting.PrimaryColumns.ForEach(col => cmd.Parameters.AddWithValue($"${col.Field}", row[col]));
                 recount += await cmd.ExecuteNonQueryAsync();
             }
-             
+
             await tran.CommitAsync();
             return recount;
         }

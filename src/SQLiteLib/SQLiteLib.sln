@@ -15,7 +15,15 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "SQLiteLib.Shared", "Shared\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqliteLib.Tests", "Tests\SqliteLib.Tests\SqliteLib.Tests.csproj", "{68C71148-6A97-4321-8FC7-474A99B69212}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HDF5.ConsoleTest", "Tests\HDF5.ConsoleTest\HDF5.ConsoleTest.csproj", "{1D2C1423-583B-4D26-B65E-005B141CFF49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HDF5.ConsoleTest", "Tests\HDF5.ConsoleTest\HDF5.ConsoleTest.csproj", "{46D400BC-6C2E-4B5D-BF06-E86409058326}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Hdf5Lib.Shared", "Shared\Hdf5Lib.Shared\Hdf5Lib.Shared.shproj", "{181CF06C-E942-4279-9ACF-C9B08569195F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Hdf5Lib", "Lib\Hdf5Lib\Hdf5Lib.csproj", "{93F301AA-5695-4E4E-927C-35D98EB0B6FC}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DataLib.Shared", "Shared\DataLib.Shared\DataLib.Shared.shproj", "{0249DFDD-5792-43E9-81AC-A64D1C374856}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataLib", "Lib\DataLib\DataLib.csproj", "{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,10 +39,18 @@ Global
 		{68C71148-6A97-4321-8FC7-474A99B69212}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68C71148-6A97-4321-8FC7-474A99B69212}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68C71148-6A97-4321-8FC7-474A99B69212}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1D2C1423-583B-4D26-B65E-005B141CFF49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1D2C1423-583B-4D26-B65E-005B141CFF49}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1D2C1423-583B-4D26-B65E-005B141CFF49}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1D2C1423-583B-4D26-B65E-005B141CFF49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{46D400BC-6C2E-4B5D-BF06-E86409058326}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{46D400BC-6C2E-4B5D-BF06-E86409058326}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{46D400BC-6C2E-4B5D-BF06-E86409058326}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{46D400BC-6C2E-4B5D-BF06-E86409058326}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93F301AA-5695-4E4E-927C-35D98EB0B6FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93F301AA-5695-4E4E-927C-35D98EB0B6FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93F301AA-5695-4E4E-927C-35D98EB0B6FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93F301AA-5695-4E4E-927C-35D98EB0B6FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,13 +59,21 @@ Global
 		{66BCB97B-A41D-475E-AB12-E6892656FE81} = {B5386B1D-5DC7-406E-A60D-263556A3318C}
 		{4E2BFFEC-5A9B-4177-8F49-A16E8C5CD55A} = {3E6B3079-071F-4448-888E-1A0FEBEDD325}
 		{68C71148-6A97-4321-8FC7-474A99B69212} = {19553B58-4625-4438-9897-1D956A7F497B}
-		{1D2C1423-583B-4D26-B65E-005B141CFF49} = {19553B58-4625-4438-9897-1D956A7F497B}
+		{46D400BC-6C2E-4B5D-BF06-E86409058326} = {19553B58-4625-4438-9897-1D956A7F497B}
+		{181CF06C-E942-4279-9ACF-C9B08569195F} = {3E6B3079-071F-4448-888E-1A0FEBEDD325}
+		{93F301AA-5695-4E4E-927C-35D98EB0B6FC} = {B5386B1D-5DC7-406E-A60D-263556A3318C}
+		{0249DFDD-5792-43E9-81AC-A64D1C374856} = {3E6B3079-071F-4448-888E-1A0FEBEDD325}
+		{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A} = {B5386B1D-5DC7-406E-A60D-263556A3318C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DE575630-5A04-4479-A10F-2AFD6A962D1B}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shared\DataLib.Shared\DataLib.Shared.projitems*{0249dfdd-5792-43e9-81ac-a64d1c374856}*SharedItemsImports = 13
+		Shared\Hdf5Lib.Shared\Hdf5Lib.Shared.projitems*{181cf06c-e942-4279-9acf-c9b08569195f}*SharedItemsImports = 13
 		Shared\SQLiteLib.Shared\SQLiteLib.Shared.projitems*{4e2bffec-5a9b-4177-8f49-a16e8c5cd55a}*SharedItemsImports = 13
 		Shared\SQLiteLib.Shared\SQLiteLib.Shared.projitems*{66bcb97b-a41d-475e-ab12-e6892656fe81}*SharedItemsImports = 5
+		Shared\Hdf5Lib.Shared\Hdf5Lib.Shared.projitems*{93f301aa-5695-4e4e-927c-35d98eb0b6fc}*SharedItemsImports = 5
+		Shared\DataLib.Shared\DataLib.Shared.projitems*{bb05ecb7-ab85-4ff7-9b69-e6d47e483a9a}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

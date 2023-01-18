@@ -26,34 +26,35 @@ public static class Program
     [STAThread]
     public static async Task Main(string[] args)
     {
-        //AnsiConsole.Markup("[bold yellow]Hello[/] [red]World![/]");
-        //AnsiConsole.Markup("[red][[World]][/]"); // [World]
+        GlobalService.Registers();
 
-        //string hello = "Hello [World]";
-        //AnsiConsole.MarkupInterpolated($"[red]{hello}[/]");
+        var tester = new ParaTableTest();
+        var stop = Stopwatch.StartNew();
+        var stype = new Style(foreground: Color.Orange1);
+        AnsiConsole.Write(new FigletText("Sqlite Lib Test").Centered().Color(Color.Red));
+        var paracount = AnsiConsole.Ask<int>("input parameter count:");
+        var rowcount = AnsiConsole.Ask<int>("input row count:");
+        var chunkcount = AnsiConsole.Ask<int>("input chunk count:");
 
-        //AnsiConsole.Markup("[bold yellow on green]Hello[/]");
-        //AnsiConsole.Markup("[default on blue]World[/]");
-        //AnsiConsole.Markup("Hello :globe_showing_europe_africa:!");
+        tester.RowCount = rowcount;
+        tester.ParaCount = paracount;
+        tester.ChunkCount = chunkcount;
 
-        //var table = new Table().Centered();
+        AnsiConsole.Write(new Rule($"[White]Create Table WAT_PARA_LONG [/]").Centered());
+        var mainTable = await tester.CrateParaLongTableAsync("WAT_PARA_LONG");
+        AnsiConsole.Write(new Rule().Centered());
+        AnsiConsole.Write(new Rule($"[White]Write Data WAT_PARA_LONG[/]").Centered());
+        await tester.WriteParaLongTableAsync(mainTable);
+        AnsiConsole.Write(new Rule().Centered());
 
-        //AnsiConsole.Live(table)
-        //    .Start(ctx =>
-        //    {
-        //        table.AddColumn("Foo");
-        //        ctx.Refresh();
+        stop.Stop();
+        AnsiConsole.Write(new Rule($"[White]Sqlite Lib Test Times {stop.Elapsed.TotalSeconds} s[/]").Centered());
+        AnsiConsole.Ask<string>("input any key exit.");
+    }
 
-        //        table.AddColumn("Bar");
-        //        ctx.Refresh();
 
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        ctx.Refresh();
-        //    });
-
+    public static async Task MainForSmallTable(string[] args)
+    {
         GlobalService.Registers();
 
         var tester = new ParaTableTest();
@@ -68,14 +69,14 @@ public static class Program
         await tester.WriteParaMainTableAsync(mainTable);
         AnsiConsole.Write(new Rule().Centered());
 
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 1; i++)
         {
             AnsiConsole.Write(new Rule($"[White]Create Table WAT_PARA_{i} [/]").Centered());
             var table = await tester.CreateParaDetailTableTestAsync($"WAT_PARA_{i}");
             AnsiConsole.Write(new Rule().Centered());
             AnsiConsole.Write(new Rule($"[White]Write Data WAT_PARA_{i}[/]").Centered());
             await tester.WriteParaDetailAsync(table);
-            AnsiConsole.Write(new Rule().Centered()); 
+            AnsiConsole.Write(new Rule().Centered());
         }
 
         AnsiConsole.Write(new Rule($"[White]Write Data WAT_PARA_VIEW[/]").Centered());
@@ -83,44 +84,14 @@ public static class Program
         AnsiConsole.Write(new Rule().Centered());
 
         stop.Stop();
-        AnsiConsole.Write(new Rule($"[White]Sqlite Lib Test Times {stop.Elapsed.TotalSeconds} s[/]").Centered()); 
+        AnsiConsole.Write(new Rule($"[White]Sqlite Lib Test Times {stop.Elapsed.TotalSeconds} s[/]").Centered());
     }
 
     public static async Task Maisn(string[] args)
     {
-        //AnsiConsole.Markup("[bold yellow]Hello[/] [red]World![/]");
-        //AnsiConsole.Markup("[red][[World]][/]"); // [World]
-
-        //string hello = "Hello [World]";
-        //AnsiConsole.MarkupInterpolated($"[red]{hello}[/]");
-
-        //AnsiConsole.Markup("[bold yellow on green]Hello[/]");
-        //AnsiConsole.Markup("[default on blue]World[/]");
-        //AnsiConsole.Markup("Hello :globe_showing_europe_africa:!");
-
-        //var table = new Table().Centered();
-
-        //AnsiConsole.Live(table)
-        //    .Start(ctx =>
-        //    {
-        //        table.AddColumn("Foo");
-        //        ctx.Refresh();
-
-        //        table.AddColumn("Bar");
-        //        ctx.Refresh();
-
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        table.AddRow("Baz", "[green]Qux[/]");
-        //        ctx.Refresh();
-        //    });
-
         GlobalService.Registers();
 
-        var rows = GlobalService.GetService<IDataRowCollection>();
-
-
+        var rows = new DataRowCollection { Table = table };
         DBPath = Path.Combine(AppContext.BaseDirectory, "Data", "Sqlite.db");
         DataTable.DBPath = DBPath;
         var stype = new Style(foreground: Color.Orange1);

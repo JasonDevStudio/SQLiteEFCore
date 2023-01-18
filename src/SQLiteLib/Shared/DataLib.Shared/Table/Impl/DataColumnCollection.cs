@@ -1,8 +1,8 @@
 ﻿using System.Data.Common;
 using System.Linq;
-using SQLiteLib.Table.Interfaces;
+using DataLib.Table.Interfaces;
 
-namespace SQLiteLib.Table.Impl
+namespace DataLib.Table.Impl
 {
     /// <summary>
     /// IDataColumnCollection
@@ -58,10 +58,11 @@ namespace SQLiteLib.Table.Impl
         /// <returns>IDataColumnCollection</returns>
         public IDataColumnCollection Copy()
         {
-            var columns = new DataColumnCollection { Table = this.Table};
+            var columns = GlobalService.GetService<IDataColumnCollection>();
             var colArry = new IDataColumn[this.Count];
             this.Columns.CopyTo(colArry, 0);
-            columns.AddRange(colArry); 
+            columns.AddRange(colArry);
+            columns.Table = this.Table; 
             return columns;
         }
 
