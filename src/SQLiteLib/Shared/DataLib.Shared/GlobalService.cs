@@ -2,12 +2,11 @@
 using DataLib.Table;
 using DataLib.Table.Impl;
 using DataLib.Table.Interfaces;
-using SQLiteLib;
 
 namespace DataLib;
 
 public static class GlobalService
-{ 
+{
     private static ContainerBuilder Builder = new ContainerBuilder();
 
     private static IContainer Container;
@@ -19,9 +18,9 @@ public static class GlobalService
         Builder.RegisterType<DataRow>().As<IDataRow>().InstancePerDependency();
         Builder.RegisterType<DataColumnCollection>().As<IDataColumnCollection>();
         Builder.RegisterType<DataColumn>().As<IDataColumn>().InstancePerDependency();
-        Builder.RegisterType<DBContext>().As<IDBContext>().SingleInstance();
+        Builder.RegisterType<DBContextBasic>().As<IDBContext>().SingleInstance();
         Container = Builder.Build();
     }
 
-    public static T GetService<T>() => Container.Resolve<T>();
+    public static T GetService<T>(object key = null) => key == null ? Container.Resolve<T>() : Container.ResolveKeyed<T>(key);
 }

@@ -9,7 +9,12 @@
   <Import Project="..\..\Shared\Hdf5Lib.Shared\Hdf5Lib.Shared.projitems" Label="Shared" />
 
   <ItemGroup>
+    <PackageReference Include="HDF5-CSharp" Version="1.16.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataLib\DataLib.csproj" />
   </ItemGroup>
 
 </Project>

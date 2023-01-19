@@ -16,7 +16,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataRow.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataRowCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataTable.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DBContext.cs" />
+    <Compile Include="..\..\Shared\DataLib.Shared\Table\Impl\DBContextBasic.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\JoinMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\MergeSetting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\UpdateSetting.cs" />

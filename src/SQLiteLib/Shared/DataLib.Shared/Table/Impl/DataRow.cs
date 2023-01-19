@@ -1,4 +1,5 @@
-﻿using DataLib.Table.Interfaces;
+﻿using System;
+using DataLib.Table.Interfaces;
 
 namespace DataLib.Table.Impl
 {
@@ -21,7 +22,7 @@ namespace DataLib.Table.Impl
         /// <summary>
         /// 数据结果集合
         /// </summary>
-        public object[] Values { get; set; }
+        public Array Values { get; set; }
 
         /// <summary>
         /// 索引器
@@ -30,8 +31,8 @@ namespace DataLib.Table.Impl
         /// <returns>object</returns>
         public object this[int index]
         {
-            get => Values[index];
-            set => Values[index] = value;
+            get => Values.GetValue(index);
+            set => Values.SetValue(value, index);
         }
 
         /// <summary>
@@ -52,8 +53,8 @@ namespace DataLib.Table.Impl
         /// <returns>object</returns>
         public object this[IDataColumn column]
         {
-            get => this.Values[column.ColumnIndex];
-            set => this.Values[column.ColumnIndex] = value;
+            get => Values.GetValue(column.ColumnIndex);
+            set => Values.SetValue(value, column.ColumnIndex);
         }
     }
 }

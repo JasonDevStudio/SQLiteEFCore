@@ -9,15 +9,6 @@
     <Import_RootNamespace>Hdf5Lib.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumn.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumnCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataRow.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataRowCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataTable.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataColumn.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataColumnCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataRow.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataRowCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DBContext.cs" />
   </ItemGroup>
 </Project>

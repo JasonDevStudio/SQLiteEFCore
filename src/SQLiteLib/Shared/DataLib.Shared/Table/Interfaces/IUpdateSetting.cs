@@ -46,5 +46,13 @@ namespace DataLib.Table
         /// 需要新增的数据行
         /// </summary>
         IDataRowCollection Rows { get; set; }
+
+        /// <summary>
+        /// Gets or sets the row indexs.
+        /// </summary>
+        /// <value>
+        /// The row indexs.
+        /// </value>
+        List<int> RowIndexs { get; set; } 
     }
 }

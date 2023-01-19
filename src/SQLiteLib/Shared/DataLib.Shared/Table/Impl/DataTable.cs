@@ -32,7 +32,7 @@ namespace DataLib.Table.Impl
         /// <summary>
         /// 本地数据库表名
         /// </summary>
-        public string SqliteTable { get; set; }
+        public string OriginalTable { get; set; }
 
         /// <summary>
         /// 数据行数量
@@ -90,7 +90,7 @@ namespace DataLib.Table.Impl
             var table = new DataTable();
             table.Id = Guid.NewGuid().ToString();
             table.Name = Name;
-            table.SqliteTable = SqliteTable;
+            table.OriginalTable = SqliteTable;
             table.Columns = columns;
 
             foreach (var col in columns.Columns)
@@ -198,7 +198,7 @@ namespace DataLib.Table.Impl
         /// </summary>
         /// <param name="table">需要删除的数据表名</param>
         /// <returns>Task</returns>
-        public async Task DropAsync(string table = null) => await this.Context.DropAsync(table ?? this.SqliteTable);
+        public async Task DropAsync(string table = null) => await this.Context.DropAsync(table ?? this.OriginalTable);
 
         /// <summary>
         /// 数据表重命名
@@ -207,8 +207,8 @@ namespace DataLib.Table.Impl
         /// <returns>Task</returns>
         public async Task RenameAsync(string rename, string originName = null)
         {
-            await this.Context.RenameAsync(originName ?? this.SqliteTable, rename);
-            this.SqliteTable = rename;
+            await this.Context.RenameAsync(originName ?? this.OriginalTable, rename);
+            this.OriginalTable = rename;
         }
 
         /// <summary>

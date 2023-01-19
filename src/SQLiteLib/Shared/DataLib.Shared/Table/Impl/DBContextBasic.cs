@@ -2,7 +2,7 @@
 
 namespace DataLib.Table.Impl;
 
-public abstract class DBContext : IDisposable
+public abstract class DBContextBasic : IDBContext
 {
     #region Properties
      
@@ -18,7 +18,7 @@ public abstract class DBContext : IDisposable
     /// <summary>
     /// DBContext
     /// </summary>
-    public DBContext()
+    public DBContextBasic()
     {
         this.OnConfiguring();
     }

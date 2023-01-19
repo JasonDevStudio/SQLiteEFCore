@@ -19,7 +19,7 @@
         /// <summary>
         /// 数据结果集合
         /// </summary>
-        object[] Values { get; set; }
+        Array Values { get; set; }
 
         /// <summary>
         /// 索引器

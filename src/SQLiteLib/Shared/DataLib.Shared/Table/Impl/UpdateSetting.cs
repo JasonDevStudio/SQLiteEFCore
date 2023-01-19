@@ -5,7 +5,7 @@ namespace DataLib.Table
     /// <summary>
     /// UpdateSetting
     /// </summary>
-    public class UpdateSetting: IUpdateSetting
+    public class UpdateSetting : IUpdateSetting
     {
         /// <summary>
         /// 合并列时选择的Join 方式
@@ -46,5 +46,13 @@ namespace DataLib.Table
         /// 需要新增的数据行
         /// </summary>
         public IDataRowCollection Rows { get; set; }
+
+        /// <summary>
+        /// Gets or sets the row indexs.
+        /// </summary>
+        /// <value>
+        /// The row indexs.
+        /// </value>
+        public List<int> RowIndexs { get; set; }
     }
 }

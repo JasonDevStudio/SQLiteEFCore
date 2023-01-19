@@ -4,7 +4,7 @@
     /// IDataColumn
     /// </summary>
     public interface IDataColumn
-    {
+    { 
         /// <summary>
         /// DataTable
         /// </summary>

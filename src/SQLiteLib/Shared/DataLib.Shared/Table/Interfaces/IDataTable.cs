@@ -22,9 +22,9 @@
         string Name { get; set; }
 
         /// <summary>
-        /// Sqlite Table Name
+        /// Original Table Name
         /// </summary>
-        string SqliteTable { get; set; }
+        string OriginalTable { get; set; }
 
         /// <summary>
         /// 数据行数量
