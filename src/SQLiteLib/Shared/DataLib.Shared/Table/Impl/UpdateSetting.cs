@@ -25,7 +25,7 @@ namespace DataLib.Table
         /// <summary>
         /// 查询参数
         /// </summary>
-        public List<Condition> Parameters { get; set; }
+        public List<IQueryFilter> Parameters { get; set; }
 
         /// <summary>
         /// 需要新增的数据列

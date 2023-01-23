@@ -130,5 +130,15 @@
         /// </summary>
         /// <param name="action">Action</param>
         void ForEach(Action<IDataColumn> action);
+
+        /// <summary>
+        /// Converts to dictionary.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TElement">The type of the element.</typeparam> 
+        /// <param name="keySelector">The key selector.</param>
+        /// <param name="elementSelector">The element selector.</param>
+        /// <returns>Dictionary</returns>
+        Dictionary<TKey, TElement> ToDictionary<TKey, TElement>(Func<IDataColumn, TKey> keySelector, Func<IDataColumn, TElement> elementSelector);
     }
 }

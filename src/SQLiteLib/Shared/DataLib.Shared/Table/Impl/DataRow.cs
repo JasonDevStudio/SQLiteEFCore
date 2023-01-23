@@ -17,7 +17,7 @@ namespace DataLib.Table.Impl
         /// <summary>
         /// Row Index
         /// </summary>
-        public int RowIndex { get; set; }
+        public ulong RowIndex { get; set; }
 
         /// <summary>
         /// 数据结果集合

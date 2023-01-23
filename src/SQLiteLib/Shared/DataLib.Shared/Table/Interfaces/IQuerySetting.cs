@@ -26,7 +26,7 @@ namespace DataLib.Table
         /// <value>
         /// The parameters.
         /// </value>
-        List<ICondition> Parameters { get; set; }
+        List<IQueryFilter> Parameters { get; set; }
 
         /// <summary>
         /// Gets or sets the table.

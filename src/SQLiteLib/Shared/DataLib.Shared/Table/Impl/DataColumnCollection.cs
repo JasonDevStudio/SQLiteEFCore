@@ -17,7 +17,32 @@ namespace DataLib.Table.Impl
         public DataColumnCollection()
         {
         }
-         
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataColumnCollection"/> class.
+        /// </summary>
+        /// <param name="columns">The columns.</param>
+        /// <param name="table">The table.</param>
+        public DataColumnCollection(List<IDataColumn> columns, IDataTable table = null)
+        {
+            DicColumns = columns.ToDictionary(m => m.Field, m => m);
+            Columns = columns;
+            Table = table;
+
+            for (int i = 0; i < this.Count; i++)
+                this.Columns[i].ColumnIndex = i;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataColumnCollection"/> class.
+        /// </summary>
+        /// <param name="columns">The columns.</param>
+        /// <param name="table">The table.</param>
+        public DataColumnCollection(IDataColumnCollection columns, IDataTable table = null) : this(columns.Columns, table)
+        {
+            Table = table ?? columns.Table;
+        }
+
         /// <summary>
         /// 数据列集合
         /// </summary>
@@ -62,7 +87,7 @@ namespace DataLib.Table.Impl
             var colArry = new IDataColumn[this.Count];
             this.Columns.CopyTo(colArry, 0);
             columns.AddRange(colArry);
-            columns.Table = this.Table; 
+            columns.Table = this.Table;
             return columns;
         }
 
@@ -83,7 +108,7 @@ namespace DataLib.Table.Impl
         public void AddRange(IEnumerable<IDataColumn> columns)
         {
             this.Columns.AddRange(columns);
-            this.DicColumns = this.Columns.ToDictionary(m=>m.Field, m=>m);
+            this.DicColumns = this.Columns.ToDictionary(m => m.Field, m => m);
         }
 
         /// <summary>
@@ -167,5 +192,17 @@ namespace DataLib.Table.Impl
         /// </summary>
         /// <param name="action">Action</param>
         public void ForEach(Action<IDataColumn> action) => this.Columns.ForEach(action);
+
+        /// <summary>
+        /// Converts to dictionary.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the key.</typeparam>
+        /// <typeparam name="TElement">The type of the element.</typeparam> 
+        /// <param name="keySelector">The key selector.</param>
+        /// <param name="elementSelector">The element selector.</param>
+        /// <returns>Dictionary</returns>
+        public Dictionary<TKey, TElement> ToDictionary<TKey, TElement>(Func<IDataColumn, TKey> keySelector, Func<IDataColumn, TElement> elementSelector) where TKey : notnull =>
+            this.Columns.ToDictionary(keySelector, elementSelector);
+
     }
 }

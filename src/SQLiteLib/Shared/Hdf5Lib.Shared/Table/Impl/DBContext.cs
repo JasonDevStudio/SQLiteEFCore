@@ -3,6 +3,10 @@ using DataLib.Table.Impl;
 using DataLib.Table;
 using HDF5CSharp;
 using System.Reflection.Metadata.Ecma335;
+using HDF.PInvoke;
+using HDF5.NET;
+using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace Hdf5Lib.Table.Impl;
 
@@ -42,6 +46,8 @@ public class DBContext : DBContextBasic
             });
         }
 
+        Hdf5.CloseGroup(groupId);
+        Hdf5.CloseFile(fileId);
         await Task.CompletedTask;
     }
 
@@ -69,6 +75,8 @@ public class DBContext : DBContextBasic
 
         var fileId = File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
         var groupId = Hdf5.CreateOrOpenGroup(fileId, table.OriginalTable);
+        Hdf5.CloseGroup(groupId);
+        Hdf5.CloseFile(fileId);
         await Task.CompletedTask;
     }
 
@@ -113,22 +121,22 @@ public class DBContext : DBContextBasic
         if (string.IsNullOrWhiteSpace(rows.Table.OriginalTable))
             throw new ArgumentNullException(nameof(rows.Table.OriginalTable));
 
-        return await Task.Factory.StartNew(() =>
+        var fileId = File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
+        var groupId = Hdf5.CreateOrOpenGroup(fileId, rows.Table.OriginalTable);
+
+        if (rows.Table.Columns?.Any() ?? false)
         {
-            var fileId = File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
-            var groupId = Hdf5.CreateOrOpenGroup(fileId, rows.Table.OriginalTable);
-
-            if (rows.Table.Columns?.Any() ?? false)
+            rows.Table.Columns.ForEach(column =>
             {
-                rows.Table.Columns.ForEach(column =>
-                {
-                    var values = rows.Select(m => m[column.ColumnIndex]).ToArray();
-                    Hdf5.WriteDataset(groupId, column.Field, values);
-                });
-            }
+                var values = rows.Select(m => m[column.ColumnIndex]).ToArray();
+                Hdf5.WriteDataset(groupId, column.Field, values);
+            });
+        }
 
-            return rows.Count;
-        });
+        Hdf5.CloseGroup(groupId);
+        Hdf5.CloseFile(fileId);
+        await Task.CompletedTask;
+        return rows.Count;
     }
 
     /// <summary>
@@ -145,18 +153,6 @@ public class DBContext : DBContextBasic
     /// </exception>
     public override async Task<int> UpdateAsync(IUpdateSetting setting)
     {
-        if (string.IsNullOrWhiteSpace(setting.Table))
-            throw new ArgumentNullException(nameof(UpdateSetting.Table));
-
-        if (setting.UpdateColumns == null || !setting.UpdateColumns.Any())
-            throw new ArgumentNullException(nameof(UpdateSetting.UpdateColumns));
-
-        if (setting.PrimaryColumns == null || !setting.PrimaryColumns.Any())
-            throw new ArgumentNullException(nameof(UpdateSetting.PrimaryColumns));
-
-        if (setting.NewColumns?.Any() ?? false)
-            await this.AddColumnsAsync(setting);
-
         await Task.CompletedTask;
         return 1;
     }
@@ -221,6 +217,58 @@ public class DBContext : DBContextBasic
     }
 
     /// <summary>
+    /// Queries the asynchronous.
+    /// </summary>
+    /// <param name="setting">The setting.</param>
+    /// <returns>IDataRowCollection</returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public override async Task<IDataTable> QueryDataAsync(IQuerySetting setting)
+    {
+        if (setting.Table == null)
+            throw new ArgumentNullException(nameof(IQuerySetting.Table));
+
+        if (string.IsNullOrWhiteSpace(setting.Table.OriginalTable))
+            throw new ArgumentNullException(nameof(IQuerySetting.Table.OriginalTable));
+
+        if (!(setting.Columns?.Any() ?? false))
+            throw new ArgumentNullException(nameof(IQuerySetting.Columns));
+
+        var rowIndexs = new List<ulong>();
+        using var h5file = H5File.OpenRead(this.DBPath);
+        var h5group = h5file.Group(setting.Table.OriginalTable);
+        var table = new DataTable(setting.Table, setting.Columns.Columns);
+
+        // 过滤查询
+        setting.Parameters.ForEach(async p =>
+        {
+            var selection = rowIndexs.Any() ? new HyperslabSelection(rowIndexs.Count, rowIndexs.ToArray(), rowIndexs.Select(r => 1ul).ToArray()) : null;
+            var h5dataset = h5group.Dataset(p.DataColumn.Field);
+            var dataValues = await h5dataset.ReadStringAsync(selection);
+            var indexs = p.Filter(dataValues).Cast<ulong>();
+            rowIndexs = rowIndexs.Intersect(indexs).ToList();
+        });
+
+        // 取出数据
+        var selection = rowIndexs.Any() ? new HyperslabSelection(rowIndexs.Count, rowIndexs.ToArray(), rowIndexs.Select(r => 1ul).ToArray()) : null;
+        setting.Columns.ForEach(async col =>
+        {
+            var h5dataset = h5group.Dataset(col.Field);
+            var dataValues = await h5dataset.ReadStringAsync(selection);
+            var values = this.ReadData(dataValues, col);
+
+            for (int i = 0; i < rowIndexs.Count; i++)
+            {
+                IDataRow row = table.RowCount > i ? table.Rows[i]: table.NewRow();
+                row[col.ColumnIndex] = values.GetValue(i);
+                row.RowIndex = rowIndexs[i];
+            } 
+        });
+
+        h5file.Dispose();
+        return table;
+    }
+
+    /// <summary>
     /// Reads the data.
     /// </summary>
     /// <param name="objects">The objects.</param>
@@ -273,4 +321,12 @@ public class DBContext : DBContextBasic
     /// <returns>Task</returns>
     /// <exception cref="ArgumentNullException">table</exception>
     public override async Task DropAsync(string table) => await Task.CompletedTask;
+}
+
+public struct DataValue
+{
+    public int RowIndex;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 2000)]
+    public object Value;
 }

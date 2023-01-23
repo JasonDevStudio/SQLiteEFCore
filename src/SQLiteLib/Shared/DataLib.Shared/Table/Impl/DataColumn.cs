@@ -94,5 +94,15 @@ namespace DataLib.Table.Impl
         /// 排序方式
         /// </summary>
         public string OrderBy { get; set; }
+
+        /// <summary>
+        /// Gets or sets the values.
+        /// </summary>
+        /// <value>
+        /// The values.
+        /// </value>
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Array Values { get; set; }
     }
 }

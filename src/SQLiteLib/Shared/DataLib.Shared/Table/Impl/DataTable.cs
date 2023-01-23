@@ -76,6 +76,34 @@ namespace DataLib.Table.Impl
             this.Columns.Table = this;
         }
 
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="source">IDataTable</param>
+        public DataTable(IDataTable source) : this(source, null)
+        {
+        }
+
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="source">IDataTable</param>
+        /// <param name="columns">List{IDataColumn}</param>
+        public DataTable(IDataTable source, List<IDataColumn> columns) 
+        {
+            var table = new DataTable();
+            table.Id = source.Id;
+            table.Name = Name;
+            table.OriginalTable = source.OriginalTable;
+            table.Columns = new DataColumnCollection((columns?.Any() ?? false) ? source.Columns.Select(m => new DataColumn(m)).ToList<IDataColumn>() : columns.Select(m => new DataColumn(m)).ToList<IDataColumn>(), table);
+
+            table.Columns.ForEach(col =>
+            {
+                col.OriginTableId = table.Id;
+                col.Table = table;
+            });
+        }
+
         #region Methods
 
         /// <summary>
@@ -112,7 +140,7 @@ namespace DataLib.Table.Impl
         {
             var row = new DataRow();
             row.Table = this;
-            row.RowIndex = this.RowCount;
+            row.RowIndex = Convert.ToUInt64(this.RowCount);
             row.Values = new object[this.ColumnCount];
             return row;
         }

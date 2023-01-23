@@ -44,6 +44,13 @@ public abstract class DBContextBasic : IDBContext
     /// <returns>IDataRowCollection</returns>
     public abstract Task<IDataRowCollection> QueryAsync(IQuerySetting setting);
 
+    /// <summary>
+    /// Queries the asynchronous.
+    /// </summary>
+    /// <param name="setting">The setting.</param>
+    /// <returns>IDataTable</returns>
+    public abstract Task<IDataTable> QueryDataAsync(IQuerySetting setting);
+
     #endregion Query
 
     #region Insert Del Update Del Rename Drop
@@ -131,6 +138,5 @@ public abstract class DBContextBasic : IDBContext
         throw new NotImplementedException();
     }
 
-    #endregion Insert Del Update Del Rename Drop
-     
+    #endregion Insert Del Update Del Rename Drop     
 }

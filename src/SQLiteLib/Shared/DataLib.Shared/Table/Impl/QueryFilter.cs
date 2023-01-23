@@ -2,7 +2,7 @@
 
 namespace DataLib.Table
 {
-    public class Condition
+    public abstract class QueryFilter : IQueryFilter
     {
         /// <summary>
         /// 数据列
@@ -23,14 +23,19 @@ namespace DataLib.Table
         /// 二元运算逻辑
         /// </summary>
         public string Binary { get; set; }
-         
+
         /// <summary>
         /// 生成Sql
         /// </summary>
         /// <returns>Sql</returns>
-        public virtual string ToString()
-        {
-            throw new NotImplementedException();
-        } 
+        public abstract string ToString();
+
+        /// <summary>
+        /// Filters the asynchronous.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception> 
+        public abstract List<int> Filter(Array source);
     }
 }

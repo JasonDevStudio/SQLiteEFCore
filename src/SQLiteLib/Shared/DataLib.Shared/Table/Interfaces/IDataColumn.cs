@@ -65,5 +65,13 @@
         /// 表达式
         /// </summary>
         string Expression { get; set; }
+
+        /// <summary>
+        /// Gets or sets the values.
+        /// </summary>
+        /// <value>
+        /// The values.
+        /// </value>
+        Array Values { get; set; }
     }
 }

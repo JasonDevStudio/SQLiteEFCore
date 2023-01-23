@@ -9,8 +9,10 @@
     <Import_RootNamespace>DataLib.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Common\SystemEx.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\Condition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\LogicMode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\QueryFilter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumn.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumnCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataRow.cs" />
@@ -20,7 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\JoinMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\MergeSetting.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\UpdateSetting.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\ICondition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IQueryFilter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataColumn.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataColumnCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Interfaces\IDataRow.cs" />
