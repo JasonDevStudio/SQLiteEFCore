@@ -37,6 +37,22 @@
         int ColumnCount { get; }
 
         /// <summary>
+        /// Gets or sets the database file.
+        /// </summary>
+        /// <value>
+        /// The database file.
+        /// </value>
+        string DBFile { get; set; }
+
+        /// <summary>
+        /// Gets or sets the mode.
+        /// </summary>
+        /// <value>
+        /// The mode.
+        /// </value>
+        TableMode Mode { get; set; }
+
+        /// <summary>
         /// 数据列集合
         /// </summary>
         IDataColumnCollection Columns { get; set; }
@@ -141,7 +157,7 @@
         /// </summary>
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
-        Task<IDataRowCollection> QueryAsync(IQuerySetting setting);
+        Task<IDataTable> QueryAsync(IQuerySetting setting);
 
         /// <summary>
         /// Executes the non query asynchronous.

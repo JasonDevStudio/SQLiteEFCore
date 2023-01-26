@@ -11,6 +11,8 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Common\SystemEx.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)GlobalService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\QuerySetting.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\TableMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\LogicMode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\QueryFilter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Table\Impl\DataColumn.cs" />

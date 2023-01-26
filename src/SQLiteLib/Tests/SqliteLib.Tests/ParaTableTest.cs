@@ -25,7 +25,7 @@ internal class ParaTableTest
     {
         var stop = Stopwatch.StartNew();
         DataTable.DBPath = DBPath;
-        AnsiConsole.MarkupLine("[Green] Start processing data...[/]");
+        AnsiConsole.MarkupLine("[Green] Start create data...[/]");
         var columns = new DataColumnCollection();
         columns.Add(new DataColumn() { Name = "RowIndex", Field = "RowIndex", IsPK = true, IsAutoincrement = false, ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
         columns.Add(new DataColumn() { Name = "RowKey", Field = "RowKey", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
@@ -45,7 +45,7 @@ internal class ParaTableTest
         var table = await DataTable.CreateTableAsync(tableName, tableName, columns);
 
         stop.Stop();
-        AnsiConsole.MarkupLine($"[Green] End processing data, times {stop.Elapsed.TotalSeconds} s..[/]");
+        AnsiConsole.MarkupLine($"[Green] End create data, times {stop.Elapsed.TotalSeconds} s..[/]");
         return table;
     }
 

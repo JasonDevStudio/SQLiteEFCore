@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,11 +7,18 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 	<ItemGroup>
+		<PackageReference Include="HDF5.NET" Version="1.0.0-alpha.22" />
 		<PackageReference Include="Spectre.Console" Version="0.46.0" />
+		<PackageReference Include="Autofac" Version="6.5.0" />
 	</ItemGroup>
 
 	<ItemGroup>
     <PackageReference Include="HDF5-CSharp" Version="1.16.2" />
   </ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Lib\DataLib\DataLib.csproj" />
+	  <ProjectReference Include="..\..\Lib\Hdf5Lib\Hdf5Lib.csproj" />
+	</ItemGroup>
 
 </Project>

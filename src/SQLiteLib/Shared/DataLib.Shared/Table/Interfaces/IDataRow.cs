@@ -14,7 +14,7 @@
         /// <summary>
         /// Row Index
         /// </summary>
-        ulong RowIndex { get; set; }
+        int RowIndex { get; set; }
 
         /// <summary>
         /// 数据结果集合

@@ -1,4 +1,5 @@
-﻿using DataLib.Table.Interfaces;
+﻿using System.Runtime.CompilerServices;
+using DataLib.Table.Interfaces;
 
 namespace DataLib.Table.Impl
 {
@@ -35,6 +36,26 @@ namespace DataLib.Table.Impl
         public string OriginalTable { get; set; }
 
         /// <summary>
+        /// Gets or sets the database file.
+        /// </summary>
+        /// <value>
+        /// The database file.
+        /// </value>
+        public string DBFile
+        {
+            get => this.Context?.DBPath;
+            set => this.Context.DBPath = value;
+        }
+
+        /// <summary>
+        /// Gets or sets the mode.
+        /// </summary>
+        /// <value>
+        /// The mode.
+        /// </value>
+        public TableMode Mode { get; set; } = TableMode.HDF5;
+
+        /// <summary>
         /// 数据行数量
         /// </summary>
         public int RowCount => this.Rows?.Count ?? 0;
@@ -68,7 +89,7 @@ namespace DataLib.Table.Impl
         /// </summary>
         public DataTable()
         {
-            this.Context = GlobalService.GetService<IDBContext>();
+            this.Context = GlobalService.GetService<IDBContext>(this.Mode);
             this.Id = Guid.NewGuid().ToString();
             this.Rows = new DataRowCollection();
             this.Columns = new DataColumnCollection();
@@ -89,7 +110,7 @@ namespace DataLib.Table.Impl
         /// </summary>
         /// <param name="source">IDataTable</param>
         /// <param name="columns">List{IDataColumn}</param>
-        public DataTable(IDataTable source, List<IDataColumn> columns) 
+        public DataTable(IDataTable source, List<IDataColumn> columns)
         {
             var table = new DataTable();
             table.Id = source.Id;
@@ -109,17 +130,19 @@ namespace DataLib.Table.Impl
         /// <summary>
         /// 创建数据表
         /// </summary>
-        /// <param name="Name">数据表明</param>
-        /// <param name="SqliteTable">对应本地Sqlite 数据表明</param>
+        /// <param name="tableName">数据表明</param>
+        /// <param name="originalTable">对应本地Sqlite 数据表明</param>
         /// <param name="columns">数据列集合</param>
+        /// <param name="dbfile">数据文件</param>
         /// <returns>IDataTable</returns>
-        public static async Task<IDataTable> CreateTableAsync(string Name, string SqliteTable, IDataColumnCollection columns)
+        public static async Task<IDataTable> CreateTableAsync(string tableName, string originalTable, IDataColumnCollection columns, string dbfile)
         {
             var table = new DataTable();
             table.Id = Guid.NewGuid().ToString();
-            table.Name = Name;
-            table.OriginalTable = SqliteTable;
+            table.Name = tableName;
+            table.OriginalTable = originalTable;
             table.Columns = columns;
+            table.DBFile= dbfile;
 
             foreach (var col in columns.Columns)
             {
@@ -140,7 +163,7 @@ namespace DataLib.Table.Impl
         {
             var row = new DataRow();
             row.Table = this;
-            row.RowIndex = Convert.ToUInt64(this.RowCount);
+            row.RowIndex = this.RowCount;
             row.Values = new object[this.ColumnCount];
             return row;
         }
@@ -244,7 +267,7 @@ namespace DataLib.Table.Impl
         /// </summary>
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
-        public async Task<IDataRowCollection> QueryAsync(IQuerySetting setting) => await this.Context.QueryAsync(setting);
+        public async Task<IDataTable> QueryAsync(IQuerySetting setting) => await this.Context.QueryAsync(setting);
 
         /// <summary>
         /// Executes the non query asynchronous.

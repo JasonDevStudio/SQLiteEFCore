@@ -1,48 +1,122 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Diagnostics;
 using System.Net;
+using System.Numerics;
+using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using HDF.PInvoke;
 using HDF5.NET;
 using HDF5CSharp;
 using HDF5CSharp.DataTypes;
+using Newtonsoft.Json.Linq;
 using Spectre.Console;
 using static HDF.PInvoke.H5F;
+using static HDF.PInvoke.H5O.hdr_info_t;
+using Rule = Spectre.Console.Rule;
 
 namespace HDF5.ConsoleTest
 {
     internal class Program
     {
-        public static int RowCount = 50000000;
-        public static int ParaCount { get; set; } = 200;
+        public static int RowCount = 2000000;
+        public static int ParaCount { get; set; } = 100;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-            WriteLongTable();
+            GCSettings.LatencyMode = GCLatencyMode.Batch;
+            // WriteLongTable();
+            // WriteStringLongTable();
+            // await QueryStringData();
+            // QueryDataset();
+            // await QueryNumberData2();
+            // WriteLong2DTable();
+
+            var tester = new Hdf5Test();
+            var table = await tester.CreateDataTableAsync("HDF5_TABLE_TEST");
+            await tester.WriteDataTableAsync(table);
+            await tester.QueryDataAsync(table);
         }
 
-        static void WriteLongTable1()
+        static async Task Main11(string[] args)
+        {
+            GCSettings.LatencyMode = GCLatencyMode.Batch;
+            var tester = new Hdf5Test();
+            var stop = Stopwatch.StartNew();
+            var stype = new Style(foreground: Color.Orange1);
+            AnsiConsole.Write(new FigletText("Hdf5 Lib Test").Centered().Color(Color.Red));
+            var tableName = "WAT_PARA_LONG"; // AnsiConsole.Ask<int>("input table name:");
+            tester.ParaCount = AnsiConsole.Ask<int>("input parameter count:");
+            tester.RowCount = AnsiConsole.Ask<int>("input row count:");
+            AnsiConsole.Write(new Rule($"[White]Create Table {tableName} [/]").Centered());
+            var mainTable = await tester.CreateDataTableAsync(tableName);
+            AnsiConsole.Write(new Rule().Centered());
+            AnsiConsole.Write(new Rule($"[White]Write Data {tableName} [/]").Centered());
+            await tester.WriteDataTableAsync(mainTable);
+            AnsiConsole.Write(new Rule().Centered());
+
+            stop.Stop();
+            AnsiConsole.Write(new Rule($"[White]Sqlite Lib Test Times {stop.Elapsed.TotalSeconds} s[/]").Centered());
+            AnsiConsole.Ask<string>("input any key exit.");
+        }
+
+
+        static void WriteStringLongTable()
         {
             AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
-            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHHmmss}.H5");
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHH}.H5");
             var fileId = Hdf5.CreateFile(file);
             var groupId = Hdf5.CreateOrOpenGroup(fileId, "PARA_OBJECT");
+            var data = new List<string[]>(ParaCount);
             AnsiConsole.Write(new Rule($"[White] {DateTime.Now} Start Processing Data[/]").Centered());
 
             var st = Stopwatch.StartNew();
             for (int i = 0; i < ParaCount; i++)
             {
-                var values = new double[RowCount];
+                var values = new string[RowCount];
                 for (int j = 0; j < RowCount; j++)
                 {
-                    values[j] = 314.915289854656478636 / (j + 1) / 1000000;
+                    values[j] = $"{i}_{j}.987654321987654321987654321987654321";
                 }
 
-                Hdf5.WriteDataset(groupId, $"PARA_{i}_OBJECT", values);
+                data.Add(values);
+                // Hdf5.WriteDataset(groupId, $"PARA_{i}_OBJECT", values);
+                //AnsiConsole.Write(new Spectre.Console.Rule($"{DateTime.Now} write {i} data end...").Centered());
+                //var tableName = $"PARA_{i}_OBJECT";
+                //var datasetExists = H5L.exists(groupId, Hdf5Utils.NormalizedName(tableName)) > 0;
+                //var typeid = H5T.create(H5T.class_t.FLOAT, 64);
+                //var datasetId = long.MinValue;
+                //if (datasetExists)
+                //{
+                //    datasetId = H5D.open(groupId, tableName);
+                //}
+                //else
+                //{
+                //    ulong[] dimsExtend = Enumerable.Range(0, values.Rank).Select(i => (ulong)values.GetLength(i)).ToArray();
+                //    ulong[] maxDimsExtend = null;
+                //    var spaceId = H5S.create_simple(values.Rank, dimsExtend, maxDimsExtend);
+                //    datasetId = H5D.create(groupId, tableName, typeid, spaceId);
+                //}
+
+                //GCHandle hnd = GCHandle.Alloc(values, GCHandleType.Pinned);
+                //var status = H5D.write(datasetId, typeid, H5S.ALL, H5S.ALL, H5P.DEFAULT, hnd.AddrOfPinnedObject());
+                //hnd.Free();
             }
-             
+
             st.Stop();
+            AnsiConsole.Write(new Rule($"[White] {DateTime.Now} End Processing Data，times {st.Elapsed.TotalSeconds} s...[/]").Centered());
+            AnsiConsole.Write(new Rule($"[White] {DateTime.Now} Write Data[/]").Centered());
+            st = Stopwatch.StartNew();
+            for (int i = 0; i < data.Count; i++)
+            {
+                Hdf5.WriteDataset(groupId, $"PARA_{i}_OBJECT", data[i]);
+            }
+
+            st.Stop();
+            Hdf5.CloseGroup(groupId);
             Hdf5.CloseFile(fileId);
             AnsiConsole.Write(new Rule($"[White] times {st.Elapsed.TotalSeconds} s[/]").Centered());
             AnsiConsole.Ask<string>("Input any key exit;");
@@ -51,20 +125,19 @@ namespace HDF5.ConsoleTest
         static void WriteLongTable()
         {
             AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
-            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHHmmss}.H5"); 
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHH}.H5");
             var data = new List<double[]>(ParaCount);
             AnsiConsole.Write(new Rule($"[White] {DateTime.Now} Start Processing Data[/]").Centered());
-
             var st = Stopwatch.StartNew();
             for (int i = 0; i < ParaCount; i++)
             {
                 var values = new double[RowCount];
                 for (int j = 0; j < RowCount; j++)
                 {
-                    values[j] = 314.915289854656478636 / (j + 1) / 1000000;
+                    values[j] = j % 3 == 0 ? double.NaN : double.Parse($"{j}.7976931348623157");
                 }
 
-                data.Add(values); 
+                data.Add(values);
             }
 
             st.Stop();
@@ -75,11 +148,48 @@ namespace HDF5.ConsoleTest
             var groupId = Hdf5.CreateOrOpenGroup(fileId, "PARA_OBJECT");
             for (int i = 0; i < data.Count; i++)
             {
-                Hdf5.WriteDataset(groupId, $"PARA_{i}_OBJECT", data[i]); 
+                Hdf5.WriteDataset(groupId, $"PARA_{i}_OBJECT", data[i]);
             }
-             
+
             st.Stop();
-            Hdf5.CloseGroup(groupId); 
+            Hdf5.CloseGroup(groupId);
+            Hdf5.CloseFile(fileId);
+            AnsiConsole.Write(new Rule($"[White] times {st.Elapsed.TotalSeconds} s[/]").Centered());
+            AnsiConsole.Ask<string>("Input any key exit;");
+        }
+
+        static void WriteLong2DTable()
+        {
+            AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHH}.H5");
+            var data = new List<double[,]>(ParaCount);
+            AnsiConsole.Write(new Rule($"[White] {DateTime.Now} Start Processing Data[/]").Centered());
+            var st = Stopwatch.StartNew();
+            for (int i = 0; i < ParaCount; i++)
+            {
+                var values = new double[RowCount, 2];
+                for (int j = 0; j < RowCount; j++)
+                {
+                    values[j, 0] = j;
+                    values[j, 1] = double.Parse($"{j}.7976931348623157E+50");
+                }
+
+                data.Add(values);
+            }
+
+            st.Stop();
+            AnsiConsole.Write(new Rule($"[White] {DateTime.Now} End Processing Data，times {st.Elapsed.TotalSeconds} s...[/]").Centered());
+            AnsiConsole.Write(new Rule($"[White] {DateTime.Now} Write Data[/]").Centered());
+            st.Restart();
+            var fileId = Hdf5.CreateFile(file);
+            var groupId = Hdf5.CreateOrOpenGroup(fileId, "PARA_OBJECT");
+            for (int i = 0; i < data.Count; i++)
+            {
+                Hdf5.WriteDataset(groupId, $"PARA_{i}_OBJECT", data[i]);
+            }
+
+            st.Stop();
+            Hdf5.CloseGroup(groupId);
             Hdf5.CloseFile(fileId);
             AnsiConsole.Write(new Rule($"[White] times {st.Elapsed.TotalSeconds} s[/]").Centered());
             AnsiConsole.Ask<string>("Input any key exit;");
@@ -319,6 +429,266 @@ namespace HDF5.ConsoleTest
             st.Stop();
 
             AnsiConsole.Write(new Rule($"[White] times {st.Elapsed.TotalSeconds} s[/]").Centered());
+            AnsiConsole.Ask<string>("Input any key exit;");
+        }
+
+        static async Task QueryStringData()
+        {
+            AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"2023012521.H5");
+            var tableName = "PARA_OBJECT";
+            var columnName = "PARA_35_OBJECT";
+            var st = new Stopwatch();
+            var stt = Stopwatch.StartNew();
+            using var h5file = H5File.OpenRead(file);
+            var h5group = h5file.Group(tableName);
+            var data = new List<string>();
+            var indexs = new List<ulong>();
+
+            try
+            {
+                st.Start();
+                var max = RowCount - 1000000;
+                var rodm = new Random();
+
+                for (int i = 0; i < 100; i++)
+                {
+                    var num = rodm.Next(0, max);
+                    var lnum = Convert.ToUInt64(num);
+
+                    if (!indexs.Contains(lnum))
+                        indexs.Add(lnum);
+                }
+
+                indexs = indexs.OrderBy(ind => ind).ToList();
+
+                IEnumerable<Step> walker(ulong[] limits)
+                {
+                    foreach (var index in indexs)
+                        yield return new Step() { Coordinates = new ulong[] { index }, ElementCount = 10000 };
+                }
+
+                st.Stop();
+                AnsiConsole.Write(new Rule($"[White] random count {indexs.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+
+                var datasetSelection = new DelegateSelection(totalElementCount: Convert.ToUInt64(indexs.Count * 10000), walker);
+                var paraCountL = Convert.ToUInt64(ParaCount);
+
+                st.Restart();
+
+                //Parallel.For(0, 20, async index =>
+                //{
+                //    stt.Restart();
+                //    var h5dataset = h5group.Dataset($"PARA_{index}_OBJECT");
+                //    var dataValues = await h5dataset.ReadStringAsync(datasetSelection);
+                //    data.AddRange(dataValues);
+                //    stt.Stop();
+                //    AnsiConsole.Write(new Rule($"[White] count {dataValues.Length}, times {stt.Elapsed.TotalSeconds} s[/]").Centered());
+                //});
+
+                for (ulong j = 0; j < 20; j++)
+                {
+                    stt.Restart();
+                    var h5dataset = h5group.Dataset($"PARA_{j}_OBJECT");
+                    var dataValues = await h5dataset.ReadStringAsync(datasetSelection);
+                    data.AddRange(dataValues);
+                    stt.Stop();
+                    AnsiConsole.Write(new Rule($"[White] count {dataValues.Length}, times {stt.Elapsed.TotalSeconds} s[/]").Centered());
+                }
+
+                h5file.Dispose();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            st.Stop();
+            AnsiConsole.Write(new Rule($"[White] count {data.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+            AnsiConsole.Ask<string>("Input any key exit;");
+        }
+
+        static async Task QueryNumberData()
+        {
+            AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"2023012610.H5");
+            var tableName = "PARA_OBJECT";
+            var columnName = "PARA_35_OBJECT";
+            var st = new Stopwatch();
+            var stt = Stopwatch.StartNew();
+            using var h5file = H5File.OpenRead(file);
+            var h5group = h5file.Group(tableName);
+            var data = new List<double>();
+            var indexs = new List<ulong>();
+
+            try
+            {
+                st.Start();
+                var max = RowCount - 500000;
+                var rodm = new Random();
+
+                for (int i = 0; i < 1000000; i++)
+                {
+                    var num = rodm.Next(0, max);
+                    var lnum = Convert.ToUInt64(num);
+
+                    if (!indexs.Contains(lnum))
+                        indexs.Add(lnum);
+                }
+
+                indexs = indexs.OrderBy(ind => ind).ToList();
+
+                IEnumerable<Step> walker(ulong[] limits)
+                {
+                    foreach (var index in indexs)
+                        yield return new Step() { Coordinates = new ulong[] { index }, ElementCount = 1 };
+                }
+
+                st.Stop();
+                AnsiConsole.Write(new Rule($"[White] random count {indexs.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+
+                var datasetSelection = new DelegateSelection(totalElementCount: Convert.ToUInt64(indexs.Count), walker);
+                var paraCountL = Convert.ToUInt64(ParaCount);
+
+                st.Restart();
+
+                for (ulong j = 0; j < 50; j++)
+                {
+                    stt.Restart();
+                    var h5dataset = h5group.Dataset($"PARA_{j}_OBJECT");
+                    var dataValues = await h5dataset.ReadAsync<double>(datasetSelection);
+                    data.AddRange(dataValues);
+                    stt.Stop();
+                    //AnsiConsole.Write(new Rule($"[White] count {dataValues.Length}, times {stt.Elapsed.TotalSeconds} s[/]").Centered());
+                }
+
+                h5file.Dispose();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            st.Stop();
+            AnsiConsole.Write(new Rule($"[White] count {data.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+            AnsiConsole.Ask<string>("Input any key exit;");
+        }
+
+        static async Task QueryNumberData2()
+        {
+            AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"2023012610.H5");
+            var tableName = "PARA_OBJECT";
+            var columnName = "PARA_35_OBJECT";
+            var st = new Stopwatch();
+            var stt = Stopwatch.StartNew();
+            using var h5file = H5File.OpenRead(file);
+            var h5group = h5file.Group(tableName);
+            var data = new List<double>();
+            var indexs = new List<ulong>();
+
+            try
+            {
+                st.Start();
+                var max = RowCount - 500000;
+                var rodm = new Random();
+
+                for (int i = 0; i < 1000000; i++)
+                {
+                    var num = rodm.Next(0, max);
+                    var lnum = Convert.ToUInt64(num);
+
+                    if (!indexs.Contains(lnum))
+                        indexs.Add(lnum);
+                }
+
+                indexs = indexs.OrderBy(ind => ind).ToList();
+
+                st.Stop();
+                AnsiConsole.Write(new Rule($"[White] random count {indexs.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+
+                st.Restart();
+
+                for (ulong j = 0; j < 50; j++)
+                {
+                    stt.Restart();
+                    var h5dataset = h5group.Dataset($"PARA_{j}_OBJECT");
+                    var dataValues = await h5dataset.ReadAsync<double>();
+
+                    indexs.ForEach(ind =>
+                    {
+                        data.Add(dataValues[ind]);
+                    });
+
+                    stt.Stop();
+                    //AnsiConsole.Write(new Rule($"[White] count {dataValues.Length}, times {stt.Elapsed.TotalSeconds} s[/]").Centered());
+                }
+
+                h5file.Dispose();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            st.Stop();
+            AnsiConsole.Write(new Rule($"[White] count {data.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+            AnsiConsole.Ask<string>("Input any key exit;");
+        }
+
+        static void QueryDataset()
+        {
+            AnsiConsole.Write(new FigletText("HDF5 Lib Test").Centered().Color(Color.Red));
+            var file = Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"2023012610.H5");
+            var tableName = "PARA_OBJECT";
+            var st = new Stopwatch();
+            var stt = Stopwatch.StartNew();
+            var data = new List<object>();
+            var indexs = new List<int>();
+
+            var fileId = Hdf5.OpenFile(file);
+            var groupId = Hdf5.CreateOrOpenGroup(fileId, tableName);
+
+
+            try
+            {
+                st.Start();
+                var max = RowCount - 500000;
+                var rodm = new Random();
+
+                for (int i = 0; i < 1000000; i++)
+                {
+                    var num = rodm.Next(0, max);
+                    var lnum = num;
+
+                    if (!indexs.Contains(lnum))
+                        indexs.Add(lnum);
+                }
+
+                indexs = indexs.OrderBy(ind => ind).ToList();
+
+                st.Stop();
+                AnsiConsole.Write(new Rule($"[White] random count {indexs.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
+                st.Restart();
+
+                for (ulong j = 0; j < 50; j++)
+                {
+                    var (result, dataValues) = Hdf5.ReadDataset<double>(groupId, $"PARA_{j}_OBJECT");
+
+                    indexs.ForEach(ind =>
+                    {
+                        data.Add(dataValues.GetValue(ind));
+                    });
+
+                    //AnsiConsole.Write(new Rule($"[White] ({DateTime.Now}) times {stt.Elapsed.TotalSeconds} s[/]").Centered());
+                }
+
+                Hdf5.CloseGroup(groupId);
+                Hdf5.CloseFile(fileId);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            st.Stop();
+            AnsiConsole.Write(new Rule($"[White] count {data.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
             AnsiConsole.Ask<string>("Input any key exit;");
         }
     }

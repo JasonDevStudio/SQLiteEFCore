@@ -36,20 +36,13 @@ public abstract class DBContextBasic : IDBContext
     #endregion OnConfiguring
 
     #region Query
-
-    /// <summary>
-    /// 查询数据
-    /// </summary>
-    /// <param name="setting">数据查询参数设置</param>
-    /// <returns>IDataRowCollection</returns>
-    public abstract Task<IDataRowCollection> QueryAsync(IQuerySetting setting);
-
+     
     /// <summary>
     /// Queries the asynchronous.
     /// </summary>
     /// <param name="setting">The setting.</param>
     /// <returns>IDataTable</returns>
-    public abstract Task<IDataTable> QueryDataAsync(IQuerySetting setting);
+    public abstract Task<IDataTable> QueryAsync(IQuerySetting setting);
 
     #endregion Query
 
