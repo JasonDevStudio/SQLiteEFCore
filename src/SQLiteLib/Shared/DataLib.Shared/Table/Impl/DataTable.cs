@@ -110,19 +110,20 @@ namespace DataLib.Table.Impl
         /// </summary>
         /// <param name="source">IDataTable</param>
         /// <param name="columns">List{IDataColumn}</param>
-        public DataTable(IDataTable source, List<IDataColumn> columns)
+        public DataTable(IDataTable source, List<IDataColumn> columns) : this()
         {
-            var table = new DataTable();
-            table.Id = source.Id;
-            table.Name = Name;
-            table.OriginalTable = source.OriginalTable;
-            table.Columns = new DataColumnCollection((columns?.Any() ?? false) ? source.Columns.Select(m => new DataColumn(m)).ToList<IDataColumn>() : columns.Select(m => new DataColumn(m)).ToList<IDataColumn>(), table);
+            this.Id = source.Id;
+            this.Name = Name;
+            this.OriginalTable = source.OriginalTable;
+            this.Columns = new DataColumnCollection((columns?.Any() ?? false) ? columns.Select(m => new DataColumn(m)).ToList<IDataColumn>() : source.Columns.Select(m => new DataColumn(m)).ToList<IDataColumn>(), this);
 
-            table.Columns.ForEach(col =>
+            for (int i = 0; i < this.ColumnCount; i++)
             {
-                col.OriginTableId = table.Id;
-                col.Table = table;
-            });
+                var col = this.Columns[i];
+                col.OriginTableId = this.Id;
+                col.Table = this;
+                col.ColumnIndex= i;
+            } 
         }
 
         #region Methods
@@ -142,7 +143,7 @@ namespace DataLib.Table.Impl
             table.Name = tableName;
             table.OriginalTable = originalTable;
             table.Columns = columns;
-            table.DBFile= dbfile;
+            table.DBFile = dbfile;
 
             foreach (var col in columns.Columns)
             {
@@ -268,6 +269,13 @@ namespace DataLib.Table.Impl
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         public async Task<IDataTable> QueryAsync(IQuerySetting setting) => await this.Context.QueryAsync(setting);
+
+        /// <summary>
+        /// 查询数据
+        /// </summary>
+        /// <param name="setting">QuerySetting</param>
+        /// <returns>IDataRowCollection</returns>
+        public IDataTable Query(IQuerySetting setting) => this.Context.Query(setting);
 
         /// <summary>
         /// Executes the non query asynchronous.

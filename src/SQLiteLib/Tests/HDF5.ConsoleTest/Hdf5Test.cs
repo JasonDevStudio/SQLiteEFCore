@@ -32,9 +32,9 @@ internal class Hdf5Test
 
     public string DBPath { get; set; }
 
-    public int ParaCount { get; set; } = 30;
+    public int ParaCount { get; set; } = 50;
 
-    public int RowCount { get; set; } = 100;
+    public int RowCount { get; set; } = 10000;
 
     public async Task<IDataTable> CreateDataTableAsync(string tableName)
     {
@@ -112,22 +112,33 @@ internal class Hdf5Test
         querySetting.Columns.Add(table.Columns["DieX"]);
         querySetting.Columns.Add(table.Columns["DieY"]);
 
-        for (int i = 0; i < 30; i++)
+        for (int i = 0; i < 10; i++)
             querySetting.Columns.Add(paraColumns[i]);
 
         var setting = new Hdf5QueryFilter
         {
             Logic = LogicMode.IN,
             DataColumn = table.Columns["WaferId"],
-            Value = new string[] { "SDS_3" },
+            Value = new string[] { "SDS_12", "SDS_15", "SDS_19", "SDS_21", "SDS_18", "SDS_23" },
             Binary = LogicMode.AND
         };
 
         querySetting.Parameters.Add(setting);
+
+        var settingDieX = new Hdf5QueryFilter
+        {
+            Logic = LogicMode.Between,
+            DataColumn = table.Columns["DieX"],
+            Value = new int[] { 100, 200 },
+            Binary = LogicMode.AND
+        };
+
+        querySetting.Parameters.Add(settingDieX);
+
         stop.Stop();
         AnsiConsole.Write(new Rule($"[Green] Processing Hdf5QueryFilter end. times {stop.Elapsed.TotalSeconds} s [/]").Centered());
         stop.Restart();
-        var datatable = await table.QueryAsync(querySetting);
+        var datatable = table.Query(querySetting);
         stop.Stop();
         AnsiConsole.Write(new Rule($"[Green] query data end. count {datatable.RowCount}, times {stop.Elapsed.TotalSeconds} s [/]").Centered());
 
@@ -135,10 +146,19 @@ internal class Hdf5Test
         var actable = new Table();
 
         // Add some columns
+        actable.AddColumn(new TableColumn("RowIndex").Centered());
         datatable.Columns.ForEach(col => actable.AddColumn(new TableColumn(col.Field).Centered()));
 
-        // Add some rows
-        datatable.Rows.ForEach(row => actable.AddRow(row.Values.Cast<string>().ToArray()));
+        // Add some rows 
+        datatable.Rows.ForEach(row =>
+        {
+            var values = new string[row.Values.Length + 1];
+            values[0] = $"{row.RowIndex}";
+            for (int i = 0; i < row.Values.Length; i++)
+                values[i + 1] = $"{row.Values.GetValue(i)}";
+
+            actable.AddRow(values);
+        });
 
         // Render the table to the console
         AnsiConsole.Write(actable);

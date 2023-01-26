@@ -87,6 +87,13 @@ namespace DataLib.Table
         Task<IDataTable> QueryAsync(IQuerySetting setting);
 
         /// <summary>
+        /// Queries the asynchronous.
+        /// </summary>
+        /// <param name="setting">The setting.</param>
+        /// <returns>IDataTable</returns>
+        IDataTable Query(IQuerySetting setting);
+
+        /// <summary>
         /// Renames the asynchronous.
         /// </summary>
         /// <param name="table">The table.</param>

@@ -37,8 +37,9 @@ namespace HDF5.ConsoleTest
 
             var tester = new Hdf5Test();
             var table = await tester.CreateDataTableAsync("HDF5_TABLE_TEST");
-            await tester.WriteDataTableAsync(table);
+            await tester.WriteDataTableAsync(table); 
             await tester.QueryDataAsync(table);
+            AnsiConsole.Ask<string>("input any key exit.");
         }
 
         static async Task Main11(string[] args)

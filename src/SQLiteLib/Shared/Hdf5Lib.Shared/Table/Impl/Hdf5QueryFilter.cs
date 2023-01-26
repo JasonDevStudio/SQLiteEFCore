@@ -98,7 +98,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseDouble(out var val);
 
-                    if (fval > val)
+                    if (val > fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -116,7 +116,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseTime(out var val);
 
-                    if (fval > val)
+                    if (val > fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -161,7 +161,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseDouble(out var val);
 
-                    if (fval >= val)
+                    if (val >= fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -179,7 +179,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseTime(out var val);
 
-                    if (fval >= val)
+                    if (val >= fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -224,7 +224,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseDouble(out var val);
 
-                    if (fval < val)
+                    if (val < fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -242,7 +242,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseTime(out var val);
 
-                    if (fval < val)
+                    if (val < fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -287,7 +287,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseDouble(out var val);
 
-                    if (fval <= val)
+                    if (val <= fval)
                         rowIndexs.Add(i);
                 }
             }
@@ -305,7 +305,7 @@ public class Hdf5QueryFilter : QueryFilter
                 {
                     source.GetValue(i).TryParseTime(out var val);
 
-                    if (fval <= val)
+                    if (val <= fval)
                         rowIndexs.Add(i);
                 }
             }

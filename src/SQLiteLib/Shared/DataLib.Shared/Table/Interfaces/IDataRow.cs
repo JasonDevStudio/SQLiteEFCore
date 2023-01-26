@@ -41,5 +41,12 @@
         /// <param name="column">IDataColumn</param>
         /// <returns>object</returns>
         object this[IDataColumn column] { get; set; }
+
+        /// <summary>
+        /// Converts to array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>object[]</returns>
+        IEnumerable<object> ToArray(); 
     }
 }

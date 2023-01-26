@@ -160,6 +160,13 @@
         Task<IDataTable> QueryAsync(IQuerySetting setting);
 
         /// <summary>
+        /// 查询数据
+        /// </summary>
+        /// <param name="setting">QuerySetting</param>
+        /// <returns>IDataRowCollection</returns>
+        IDataTable Query(IQuerySetting setting);
+
+        /// <summary>
         /// Executes the non query asynchronous.
         /// </summary>
         /// <param name="sql">The SQL.</param>

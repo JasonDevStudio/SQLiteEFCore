@@ -56,5 +56,18 @@ namespace DataLib.Table.Impl
             get => Values.GetValue(column.ColumnIndex);
             set => Values.SetValue(value, column.ColumnIndex);
         }
+
+        /// <summary>
+        /// Converts to array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns>object[]</returns>
+        public IEnumerable<object> ToArray()
+        {
+            var values = new object[this.Values.Length];
+            for (int i = 0; i < this.Values.Length; i++)
+                values[i] = this.Values.GetValue(i);
+            return values;
+        }
     }
 }

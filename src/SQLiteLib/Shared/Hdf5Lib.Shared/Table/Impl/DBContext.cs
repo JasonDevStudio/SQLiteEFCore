@@ -131,8 +131,8 @@ public class DBContext : DBContextBasic
         {
             rows.Table.Columns.ForEach(column =>
             {
-                var values = rows.Select(m => m[column.ColumnIndex]?.ToString()).ToArray();
-                Hdf5.WriteDataset(groupId, column.Field, values);
+                var values = rows.Select(m => m[column.ColumnIndex]).ToArray();
+                this.WriteData(groupId, column, values);
             });
         }
 
@@ -166,6 +166,77 @@ public class DBContext : DBContextBasic
     /// <param name="setting">The setting.</param>
     /// <returns>IDataRowCollection</returns>
     /// <exception cref="NotImplementedException"></exception>
+    public override IDataTable Query(IQuerySetting setting)
+    {
+        if (setting.Table == null)
+            throw new ArgumentNullException(nameof(IQuerySetting.Table));
+
+        if (string.IsNullOrWhiteSpace(setting.Table.OriginalTable))
+            throw new ArgumentNullException(nameof(IQuerySetting.Table.OriginalTable));
+
+        if (!(setting.Columns?.Any() ?? false))
+            throw new ArgumentNullException(nameof(IQuerySetting.Columns));
+
+        var rowIndexs = new List<int>();
+        var h5file = H5File.OpenRead(this.DBPath);
+        var h5group = h5file.Group(setting.Table.OriginalTable);
+        var table = new DataTable(setting.Table, setting.Columns.Columns);
+
+        // 对查询条件进行过滤
+        setting.Parameters.ForEach(p =>
+        {
+            var h5dataset = h5group.Dataset(p.DataColumn.Field);
+            var dataValues = this.ReadData(h5dataset, p.DataColumn);
+            var indexs = p.Filter(dataValues);
+
+            if (rowIndexs.Any())
+                rowIndexs = (indexs?.Any() ?? false) ? rowIndexs?.Intersect(indexs).ToList() : rowIndexs;
+            else
+                rowIndexs = (indexs?.Any() ?? false) ? indexs : rowIndexs;
+        });
+
+        // 提出已删除的数据
+        if (deletedRows?.Any() ?? false)
+            rowIndexs = rowIndexs.Except(deletedRows).ToList();
+
+        //按列取出数据
+        var rowIndex = 0;
+        table.Columns.ForEach(col =>
+        {
+            var h5dataset = h5group.Dataset(col.Field);
+            var dataValues = this.ReadData(h5dataset, col);
+            rowIndex = 0;
+
+            foreach (var index in rowIndexs)
+            {
+                if (table.RowCount > rowIndex)
+                {
+                    var row = table.Rows[rowIndex];
+                    row[col.ColumnIndex] = dataValues.GetValue(index);
+                    row.RowIndex = index;
+                }
+                else
+                {
+                    var row = table.NewRow();
+                    row[col.ColumnIndex] = dataValues.GetValue(index);
+                    row.RowIndex = index;
+                    table.Rows.Add(row);
+                }
+
+                rowIndex++;
+            }
+        });
+
+        h5file.Dispose();
+        return table;
+    }
+
+    /// <summary>
+    /// Queries the asynchronous.
+    /// </summary>
+    /// <param name="setting">The setting.</param>
+    /// <returns>IDataRowCollection</returns>
+    /// <exception cref="NotImplementedException"></exception>
     public override async Task<IDataTable> QueryAsync(IQuerySetting setting)
     {
         if (setting.Table == null)
@@ -177,8 +248,8 @@ public class DBContext : DBContextBasic
         if (!(setting.Columns?.Any() ?? false))
             throw new ArgumentNullException(nameof(IQuerySetting.Columns));
 
-        IEnumerable<int> rowIndexs = null;
-        using var h5file = H5File.OpenRead(this.DBPath);
+        IEnumerable<int> rowIndexs = new List<int>();
+        var h5file = H5File.OpenRead(this.DBPath);
         var h5group = h5file.Group(setting.Table.OriginalTable);
         var table = new DataTable(setting.Table, setting.Columns.Columns);
 
@@ -188,11 +259,12 @@ public class DBContext : DBContextBasic
             var h5dataset = h5group.Dataset(p.DataColumn.Field);
             var dataValues = await this.ReadDataAsync(h5dataset, p.DataColumn);
             var indexs = p.Filter(dataValues);
-            rowIndexs = rowIndexs.Intersect(indexs);
+            rowIndexs = indexs?.Any() ?? false ? rowIndexs?.Intersect(indexs) : rowIndexs;
         });
 
         // 提出已删除的数据
-        rowIndexs = rowIndexs.Except(deletedRows);
+        if (deletedRows?.Any() ?? false)
+            rowIndexs = rowIndexs.Except(deletedRows);
 
         //按列取出数据
         setting.Columns.ForEach(async col =>
@@ -232,12 +304,79 @@ public class DBContext : DBContextBasic
             case TypeCode.Single:
             case TypeCode.Double:
             case TypeCode.Decimal:
-                return await dataset.ReadAsync<ulong>();
+                return await dataset.ReadAsync<double>();
             case TypeCode.DateTime:
             case TypeCode.String:
             default:
                 return await dataset.ReadStringAsync();
         }
+    }
+
+    private Array ReadData(H5Dataset dataset, IDataColumn column)
+    {
+        switch (column.TypeCode)
+        {
+            case TypeCode.Boolean:
+                return dataset.Read<bool>();
+            case TypeCode.Int16:
+            case TypeCode.Int32:
+                return dataset.Read<int>();
+            case TypeCode.UInt16:
+            case TypeCode.UInt32:
+                return dataset.Read<uint>();
+            case TypeCode.Int64:
+                return dataset.Read<long>();
+            case TypeCode.UInt64:
+                return dataset.Read<ulong>();
+            case TypeCode.Single:
+            case TypeCode.Double:
+            case TypeCode.Decimal:
+                return dataset.Read<double>();
+            case TypeCode.DateTime:
+            case TypeCode.String:
+            default:
+                return dataset.ReadString();
+        }
+    }
+
+    /// <summary>
+    /// Writes the data.
+    /// </summary>
+    /// <param name="groupId">The group identifier.</param>
+    /// <param name="column">The column.</param>
+    /// <param name="array">The array.</param>
+    private void WriteData(long groupId, IDataColumn column, Array array)
+    {
+        Array values = null;
+
+        switch (column.TypeCode)
+        {
+            case TypeCode.Boolean:
+                values = array.ConvertArray<object, int>(m => Convert.ToInt32(m));
+                break;
+            case TypeCode.Int16:
+            case TypeCode.Int32:
+            case TypeCode.UInt16:
+            case TypeCode.UInt32:
+                values = array.ConvertArray<object, int>(m => Convert.ToInt32(m));
+                break;
+            case TypeCode.Int64:
+            case TypeCode.UInt64:
+                values = array.ConvertArray<object, long>(m => Convert.ToInt64(m));
+                break;
+            case TypeCode.Single:
+            case TypeCode.Double:
+            case TypeCode.Decimal:
+                values = array.ConvertArray<object, double>(m => Convert.ToDouble(m));
+                break;
+            case TypeCode.DateTime:
+            case TypeCode.String:
+            default:
+                values = array.ConvertArray<object, string>(m => $"{m}");
+                break;
+        }
+
+        Hdf5.WriteDataset(groupId, column.Field, values);
     }
 
     /// <summary>

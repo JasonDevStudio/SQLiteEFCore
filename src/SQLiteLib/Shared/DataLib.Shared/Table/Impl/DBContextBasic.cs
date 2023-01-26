@@ -36,7 +36,14 @@ public abstract class DBContextBasic : IDBContext
     #endregion OnConfiguring
 
     #region Query
-     
+
+    /// <summary>
+    /// Queries the asynchronous.
+    /// </summary>
+    /// <param name="setting">The setting.</param>
+    /// <returns>IDataTable</returns>
+    public abstract IDataTable Query(IQuerySetting setting);
+
     /// <summary>
     /// Queries the asynchronous.
     /// </summary>
