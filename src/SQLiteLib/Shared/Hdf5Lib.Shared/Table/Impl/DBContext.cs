@@ -15,6 +15,7 @@ using DataTable = DataLib.Table.Impl.DataTable;
 using DataColumnCollection = DataLib.Table.Impl.DataColumnCollection;
 using System;
 using System.IO;
+using static System.Net.WebRequestMethods;
 
 namespace Hdf5Lib.Table.Impl;
 
@@ -91,7 +92,7 @@ public class DBContext : DBContextBasic
         if (!(table.Columns?.Any() ?? false))
             throw new ArgumentNullException(nameof(table.Columns));
 
-        var fileId = File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
+        var fileId = System.IO.File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
         var groupId = Hdf5.CreateOrOpenGroup(fileId, table.OriginalTable);
         Hdf5.CloseGroup(groupId);
         Hdf5.CloseFile(fileId);
@@ -139,7 +140,7 @@ public class DBContext : DBContextBasic
         if (string.IsNullOrWhiteSpace(rows.Table.OriginalTable))
             throw new ArgumentNullException(nameof(rows.Table.OriginalTable));
 
-        var fileId = File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
+        var fileId = System.IO.File.Exists(this.DBPath) ? Hdf5.OpenFile(this.DBPath) : Hdf5.CreateFile(this.DBPath);
         var groupId = Hdf5.CreateOrOpenGroup(fileId, rows.Table.OriginalTable);
 
         if (rows.Table.Columns?.Any() ?? false)
@@ -319,7 +320,7 @@ public class DBContext : DBContextBasic
             else
             {
                 for (int index = 0; index < dataValues.Length; index++)
-                { 
+                {
                     if (table.RowCount > rowIndex)
                     {
                         var row = table.Rows[rowIndex];
@@ -361,6 +362,36 @@ public class DBContext : DBContextBasic
         }
 
         return count;
+    }
+
+    /// <summary>
+    /// Reads the data.
+    /// </summary>
+    /// <param name="dataset">The dataset.</param>
+    /// <param name="column">The column.</param>
+    /// <returns></returns>
+    private Array ReadData(long groupId, IDataColumn column)
+    {
+        switch (column.TypeCode)
+        {
+            case TypeCode.Boolean:
+            case TypeCode.Int16:
+            case TypeCode.Int32:
+            case TypeCode.UInt16:
+            case TypeCode.UInt32:
+                return Hdf5.ReadDataset<int>(groupId, column.Field).result;
+            case TypeCode.Int64:
+            case TypeCode.UInt64:
+                return Hdf5.ReadDataset<long>(groupId, column.Field).result;
+            case TypeCode.Single:
+            case TypeCode.Double:
+            case TypeCode.Decimal:
+                return Hdf5.ReadDataset<double>(groupId, column.Field).result;
+            case TypeCode.DateTime:
+            case TypeCode.String:
+            default:
+                return Hdf5.ReadStrings(groupId, column.Field, string.Empty, false).result?.ToArray();
+        }
     }
 
     /// <summary>
@@ -430,46 +461,6 @@ public class DBContext : DBContextBasic
     }
 
     /// <summary>
-    /// Writes the data.
-    /// </summary>
-    /// <param name="groupId">The group identifier.</param>
-    /// <param name="column">The column.</param>
-    /// <param name="array">The array.</param>
-    private void WriteData(long groupId, IDataColumn column, Array array)
-    {
-        Array values = null;
-
-        switch (column.TypeCode)
-        {
-            case TypeCode.Boolean:
-                values = array.ConvertArray<object, int>(m => Convert.ToInt32(m));
-                break;
-            case TypeCode.Int16:
-            case TypeCode.Int32:
-            case TypeCode.UInt16:
-            case TypeCode.UInt32:
-                values = array.ConvertArray<object, int>(m => Convert.ToInt32(m));
-                break;
-            case TypeCode.Int64:
-            case TypeCode.UInt64:
-                values = array.ConvertArray<object, long>(m => Convert.ToInt64(m));
-                break;
-            case TypeCode.Single:
-            case TypeCode.Double:
-            case TypeCode.Decimal:
-                values = array.ConvertArray<object, double>(m => Convert.ToDouble(m));
-                break;
-            case TypeCode.DateTime:
-            case TypeCode.String:
-            default:
-                values = array.ConvertArray<object, string>(m => $"{m}");
-                break;
-        }
-
-        Hdf5.WriteDataset(groupId, column.Field, values);
-    }
-
-    /// <summary>
     /// Reads the data.
     /// </summary>
     /// <param name="objects">The objects.</param>
@@ -502,6 +493,52 @@ public class DBContext : DBContextBasic
                     return objects;
             }
         });
+    }
+
+    /// <summary>
+    /// Writes the data.
+    /// </summary>
+    /// <param name="groupId">The group identifier.</param>
+    /// <param name="column">The column.</param>
+    /// <param name="array">The array.</param>
+    private void WriteData(long groupId, IDataColumn column, Array array)
+    {
+        Array values = null;
+
+        var index = 0;
+        if (column.IsAutoincrement)
+            values = Enumerable.Range(0, array.Length).Select(m => index++).ToArray();
+        else
+        {
+            switch (column.TypeCode)
+            {
+                case TypeCode.Boolean:
+                    values = array.ConvertArray<object, int>(m => Convert.ToInt32(m));
+                    break;
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                    values = array.ConvertArray<object, int>(m => Convert.ToInt32(m));
+                    break;
+                case TypeCode.Int64:
+                case TypeCode.UInt64:
+                    values = array.ConvertArray<object, long>(m => Convert.ToInt64(m));
+                    break;
+                case TypeCode.Single:
+                case TypeCode.Double:
+                case TypeCode.Decimal:
+                    values = array.ConvertArray<object, double>(m => Convert.ToDouble(m));
+                    break;
+                case TypeCode.DateTime:
+                case TypeCode.String:
+                default:
+                    values = array.ConvertArray<object, string>(m => $"{m}");
+                    break;
+            }
+        }
+
+        Hdf5.WriteDataset(groupId, column.Field, values);
     }
 
     /// <summary>
@@ -575,7 +612,7 @@ public class DBContext : DBContextBasic
         var rightData = rightTable.QueryAsync(rightQSetting); // 从右表数据文件中加载数据到内存
         var leftRows = await leftData;
         var rightRows = await rightData;
-        var newTable = new DataTable(leftTable); 
+        var newTable = new DataTable(leftTable);
         newTable.Columns.AddRange(setting.LeftColumns);
         newTable.Columns.AddRange(setting.RightColumns);
 
@@ -608,54 +645,71 @@ public class DBContext : DBContextBasic
     {
         var newTable = new DataTable();
         var leftTable = new DataTable(setting.LeftColumns) { DBFile = setting.TableId, OriginalTable = setting.TableName, Name = setting.TableName }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable
-        var rightTable = new DataTable(setting.RightColumns) { DBFile = setting.RightTableId }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable         
+        var rightTable = new DataTable(setting.RightColumns) { DBFile = setting.RightTableId, OriginalTable = setting.RightTableName, Name = setting.RightTableName }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable         
         leftTable.StoreRowCount = await leftTable.QueryRowCountAsync();
         newTable.Columns.AddRange(new DataColumnCollection(setting.LeftColumns, newTable));
         newTable.Columns.AddRange(new DataColumnCollection(setting.NewColumns, newTable));
 
-        var fileId = Hdf5.OpenFile(leftTable.DBFile);
-        var groupId = Hdf5.CreateOrOpenGroup(fileId, leftTable.OriginalTable);
+        var leftFileId = Hdf5.OpenFile(leftTable.DBFile);
+        var rightFileId = Hdf5.OpenFile(rightTable.DBFile);
+        var leftGroup = Hdf5.CreateOrOpenGroup(leftFileId, leftTable.OriginalTable);
+        var rightGroup = Hdf5.CreateOrOpenGroup(rightFileId, rightTable.OriginalTable);
 
-        using (var leftFile = H5File.OpenRead(leftTable.DBFile))
-        using (var rightFile = H5File.OpenRead(rightTable.DBFile))
+        for (int i = 0; i < setting.MacthCloumns.Count; i++)
         {
-            var leftGroup = leftFile.Group(leftTable.OriginalTable);
-            var rightGroup = rightFile.Group(rightTable.OriginalTable);
+            var rowIndex = 0;
+            var math = setting.MacthCloumns[i];
+            var leftValues = this.ReadData(leftGroup, math.Left);
+            var rightValues = this.ReadData(rightGroup, math.right);
+            var values = new object[leftValues.Length + rightValues.Length];
 
-            for (int i = 0; i < setting.MacthCloumns.Count; i++)
+            for (int li = 0; li < leftValues.Length; li++)
+                values[rowIndex++] = leftValues.GetValue(li);
+
+            for (int ri = 0; ri < rightValues.Length; ri++)
+                values[rowIndex++] = rightValues.GetValue(ri);
+
+            this.WriteData(leftGroup, math.Left, values);
+        }
+
+        if (setting.LeftColumns?.Any() ?? false)
+        {
+            for (int i = 0; i < setting.LeftColumns.Count; i++)
             {
-                var math = setting.MacthCloumns[i];
-                var leftDataset = leftGroup.Dataset(math.Left.Field);
-                var rightDataset = leftGroup.Dataset(math.right.Field);
-                var leftValues = await this.ReadDataAsync(leftDataset, math.Left);
-                var rightValues = await this.ReadDataAsync(rightDataset, math.right);
-                var values = new object[leftValues.Length + rightValues.Length];
+                var col = setting.LeftColumns[i];
 
-                for (int li = 0; li < leftValues.Length; li++)
-                    values[li] = leftValues.GetValue(li);
-
-                for (int ri = 0; ri < rightValues.Length; ri++)
-                    values[ri] = rightValues.GetValue(ri);
-
-                this.WriteData(groupId, math.Left, values);
-            }
-
-            if (setting.NewColumns?.Any() ?? false)
-            {
-                for (int i = 0; i < setting.NewColumns.Count; i++)
+                if (!setting.MacthCloumns.Any(m => m.Left.Field == col.Field))
                 {
-                    var col = setting.NewColumns[i];
-                    var rightDataset = leftGroup.Dataset(col.Field);
-                    var rightValues = await this.ReadDataAsync(rightDataset, col);
-                    var values = this.GetDefaultArray(col, leftTable.StoreRowCount + rightValues.Length);
+                    var leftValues = this.ReadData(leftGroup, col);
+                    var values = this.GetDefaultArray(col, leftTable.StoreRowCount + leftValues.Length);
 
-                    for (int ri = 0; ri < rightValues.Length; ri++)
-                        values.SetValue(rightValues.GetValue(ri), ri + leftTable.StoreRowCount);
+                    for (int li = 0; li < leftValues.Length; li++)
+                        values.SetValue(leftValues.GetValue(li), li);
 
-                    this.WriteData(groupId, col, values);
+                    this.WriteData(leftGroup, col, values);
                 }
             }
         }
+
+        if (setting.NewColumns?.Any() ?? false)
+        {
+            for (int i = 0; i < setting.NewColumns.Count; i++)
+            {
+                var col = setting.NewColumns[i];
+                var rightValues = this.ReadData(rightGroup, col);
+                var values = this.GetDefaultArray(col, leftTable.StoreRowCount + rightValues.Length);
+
+                for (int ri = 0; ri < rightValues.Length; ri++)
+                    values.SetValue(rightValues.GetValue(ri), ri + leftTable.StoreRowCount);
+
+                this.WriteData(leftGroup, col, values);
+            }
+        }
+
+        Hdf5.CloseGroup(leftGroup);
+        Hdf5.CloseGroup(rightGroup);
+        Hdf5.CloseFile(leftFileId);
+        Hdf5.CloseFile(rightFileId);
     }
 
     public override async Task RenameAsync(string table, string rename) => await Task.CompletedTask;

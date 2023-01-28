@@ -28,7 +28,7 @@ namespace HDF5.ConsoleTest
 {
     internal class Program
     {
-        public static int RowCount = 2000000;
+        public static int RowCount = 10000000;
         public static int ParaCount { get; set; } = 100;
 
         static async Task Main(string[] args)
@@ -41,12 +41,13 @@ namespace HDF5.ConsoleTest
             // await QueryNumberData2();
             // WriteLong2DTable();
 
-            var tester = new Hdf5Test();
-            //var table = await tester.CreateDataTableAsync("HDF5_TABLE_TEST");
-            //await tester.WriteDataTableAsync(table);
-            //await tester.QueryDataAsync(table);
+            var tester = new Hdf5Test() { RowCount = RowCount, ParaCount = ParaCount };
+            var table = await tester.CreateDataTableAsync("HDF5_TABLE_TEST");
+            await tester.WriteDataTableAsync(table);
+            await tester.QueryDataAsync(table);
 
-            await tester.MergeColumnsTest();
+            // await tester.MergeColumnsTest(); // Merge Columns Test
+            // await tester.MergeRowsTest(); // Merge Rows Test
 
             AnsiConsole.Ask<string>("input any key exit.");
         }
@@ -702,7 +703,7 @@ namespace HDF5.ConsoleTest
             AnsiConsole.Ask<string>("Input any key exit;");
         }
 
-       
+
     }
 
     [Serializable]

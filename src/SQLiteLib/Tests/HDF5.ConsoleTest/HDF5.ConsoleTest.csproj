@@ -21,4 +21,13 @@
 	  <ProjectReference Include="..\..\Lib\Hdf5Lib\Hdf5Lib.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Update="2023012816.H5">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	  <None Update="2023012817.H5">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
 </Project>
