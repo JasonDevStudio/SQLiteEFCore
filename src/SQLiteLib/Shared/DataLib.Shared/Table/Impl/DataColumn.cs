@@ -12,6 +12,7 @@ namespace DataLib.Table.Impl
         /// </summary>
         public DataColumn()
         {
+            this.Id = Guid.NewGuid().ToString();
         }
 
         /// <summary>

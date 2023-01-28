@@ -7,7 +7,7 @@ namespace DataLib.Table
     /// IDBContext
     /// </summary>
     public interface IDBContext : IDisposable
-    { 
+    {
         /// <summary>
         /// Gets or sets the database path.
         /// </summary>
@@ -15,6 +15,16 @@ namespace DataLib.Table
         /// The database path.
         /// </value>
         string DBPath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the data table.
+        /// </summary>
+        /// <value>
+        /// The data table.
+        /// </value>
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        IDataTable DataTable { get; }
 
         /// <summary>
         /// Adds the columns asynchronous.
@@ -36,7 +46,7 @@ namespace DataLib.Table
         /// <param name="setting">The setting.</param>
         /// <returns></returns>
         Task DelAsync(IUpdateSetting setting);
-         
+
         /// <summary>
         /// Drops the asynchronous.
         /// </summary>
@@ -85,6 +95,13 @@ namespace DataLib.Table
         /// <param name="setting">The setting.</param>
         /// <returns>IDataTable</returns>
         Task<IDataTable> QueryAsync(IQuerySetting setting);
+
+        /// <summary>
+        /// Queries the row count.
+        /// </summary>
+        /// <param name="setting">The setting.</param>
+        /// <returns></returns>
+        Task<int> QueryRowCountAsync();
 
         /// <summary>
         /// Queries the asynchronous.

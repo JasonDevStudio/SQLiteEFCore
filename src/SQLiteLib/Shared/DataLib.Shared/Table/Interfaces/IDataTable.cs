@@ -32,6 +32,14 @@
         int RowCount { get; }
 
         /// <summary>
+        /// Gets or sets the store row count.
+        /// </summary>
+        /// <value>
+        /// The store row count.
+        /// </value>
+        int StoreRowCount { get; set; }
+
+        /// <summary>
         /// 数据列数量
         /// </summary>
         int ColumnCount { get; }
@@ -165,6 +173,12 @@
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         IDataTable Query(IQuerySetting setting);
+
+        /// <summary>
+        /// 查询数据
+        /// </summary> 
+        /// <returns>IDataRowCollection</returns>
+        Task<int> QueryRowCountAsync();
 
         /// <summary>
         /// Executes the non query asynchronous.

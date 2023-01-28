@@ -1,4 +1,7 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+using Autofac;
+using Autofac.Core;
 using DataLib.Table.Interfaces;
 
 namespace DataLib.Table.Impl
@@ -61,6 +64,14 @@ namespace DataLib.Table.Impl
         public int RowCount => this.Rows?.Count ?? 0;
 
         /// <summary>
+        /// Gets or sets the store row count.
+        /// </summary>
+        /// <value>
+        /// The store row count.
+        /// </value>
+        public int StoreRowCount { get; set; }
+
+        /// <summary>
         /// 数据列数量
         /// </summary>
         public int ColumnCount => this.Columns?.Count ?? 0;
@@ -73,6 +84,8 @@ namespace DataLib.Table.Impl
         /// <summary>
         /// 数据行集合
         /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
         public IDataRowCollection Rows { get; set; }
 
         /// <summary>
@@ -89,7 +102,9 @@ namespace DataLib.Table.Impl
         /// </summary>
         public DataTable()
         {
-            this.Context = GlobalService.GetService<IDBContext>(this.Mode);
+            var pataName = "table";
+            var parameter = new NamedParameter(pataName, this);
+            this.Context = GlobalService.GetService<IDBContext>(this.Mode, parameter);
             this.Id = Guid.NewGuid().ToString();
             this.Rows = new DataRowCollection();
             this.Columns = new DataColumnCollection();
@@ -103,6 +118,11 @@ namespace DataLib.Table.Impl
         /// <param name="source">IDataTable</param>
         public DataTable(IDataTable source) : this(source, null)
         {
+            this.Id = source.Id; 
+            this.DBFile = source.DBFile;
+            this.OriginalTable = source.OriginalTable;
+            this.Name = source.Name;
+            this.Columns.AddRange(source.Columns);
         }
 
         /// <summary>
@@ -122,8 +142,17 @@ namespace DataLib.Table.Impl
                 var col = this.Columns[i];
                 col.OriginTableId = this.Id;
                 col.Table = this;
-                col.ColumnIndex= i;
-            } 
+                col.ColumnIndex = i;
+            }
+        }
+
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="dataColumns">data columns</param>
+        public DataTable(IDataColumnCollection dataColumns) : this()
+        {
+            this.Columns = new DataColumnCollection(dataColumns, this);
         }
 
         #region Methods
@@ -276,6 +305,12 @@ namespace DataLib.Table.Impl
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         public IDataTable Query(IQuerySetting setting) => this.Context.Query(setting);
+
+        /// <summary>
+        /// 查询数据
+        /// </summary> 
+        /// <returns>IDataRowCollection</returns>
+        public async Task<int> QueryRowCountAsync() => await this.Context.QueryRowCountAsync();
 
         /// <summary>
         /// Executes the non query asynchronous.

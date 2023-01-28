@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Autofac;
+using Autofac.Core;
 using DataLib.Table;
 using DataLib.Table.Impl;
 using DataLib.Table.Interfaces;
@@ -26,5 +27,13 @@ public static class GlobalService
         Container = Builder.Build();
     }
 
-    public static T GetService<T>(object key = null) => key == null ? Container.Resolve<T>() : Container.ResolveKeyed<T>(key);
+    public static T GetService<T>(object key = null, params Parameter[] parameters)
+    {
+        if (key == null)
+            return Container.Resolve<T>();
+        else if (key != null && parameters == null)
+            return Container.ResolveKeyed<T>(key);
+        else
+            return Container.ResolveKeyed<T>(key, parameters);
+    }
 }

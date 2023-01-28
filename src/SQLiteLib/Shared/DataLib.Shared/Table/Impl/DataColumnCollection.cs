@@ -25,12 +25,8 @@ namespace DataLib.Table.Impl
         /// <param name="table">The table.</param>
         public DataColumnCollection(List<IDataColumn> columns, IDataTable table = null)
         {
-            DicColumns = columns.ToDictionary(m => m.Field, m => m);
-            Columns = columns;
             Table = table;
-
-            for (int i = 0; i < this.Count; i++)
-                this.Columns[i].ColumnIndex = i;
+            this.AddRange(columns);
         }
 
         /// <summary>
@@ -40,7 +36,6 @@ namespace DataLib.Table.Impl
         /// <param name="table">The table.</param>
         public DataColumnCollection(IDataColumnCollection columns, IDataTable table = null) : this(columns.Columns, table)
         {
-            Table = table ?? columns.Table;
         }
 
         /// <summary>
@@ -83,7 +78,7 @@ namespace DataLib.Table.Impl
         /// <returns>IDataColumnCollection</returns>
         public IDataColumnCollection Copy()
         {
-            var columns = GlobalService.GetService<IDataColumnCollection>();
+            var columns = new DataColumnCollection();
             var colArry = new IDataColumn[this.Count];
             this.Columns.CopyTo(colArry, 0);
             columns.AddRange(colArry);
@@ -97,8 +92,12 @@ namespace DataLib.Table.Impl
         /// <param name="column">IDataColumn</param> 
         public void Add(IDataColumn column)
         {
-            this.Columns.Add(column);
-            this.DicColumns[column.Field] = column;
+            if (!(this.Columns?.Any(col => column.Field == col.Field) ?? false))
+            {
+                var newColumn = new DataColumn(column) { ColumnIndex = this.Count };
+                this.Columns.Add(newColumn);
+                this.DicColumns[column.Field] = column;
+            }
         }
 
         /// <summary>
@@ -107,19 +106,28 @@ namespace DataLib.Table.Impl
         /// <param name="columns">数据列集合</param> 
         public void AddRange(IEnumerable<IDataColumn> columns)
         {
-            this.Columns.AddRange(columns);
-            this.DicColumns = this.Columns.ToDictionary(m => m.Field, m => m);
+            var index = 0;
+
+            if (columns?.Any() ?? false)
+            {
+                foreach (var col in columns)
+                {
+                    if (!(this.Columns?.Any(c => c.Field == col.Field) ?? false))
+                    {
+                        var newColumn = new DataColumn(col) { ColumnIndex = this.Count };
+                        this.Columns.Add(newColumn);
+                    }
+                }
+
+                this.DicColumns = this.Columns.ToDictionary(m => m.Field, m => m);
+            }
         }
 
         /// <summary>
         /// 批量添加列
         /// </summary>
         /// <param name="columns">数据列集合</param>
-        public void AddRange(IDataColumnCollection columns)
-        {
-            this.Columns.AddRange(columns.Columns);
-            this.DicColumns = this.Columns.ToDictionary(m => m.Field, m => m);
-        }
+        public void AddRange(IDataColumnCollection columns) => this.AddRange(columns.Columns);
 
         /// <summary>
         /// Where

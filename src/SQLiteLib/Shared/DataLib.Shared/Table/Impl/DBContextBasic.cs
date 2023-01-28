@@ -5,21 +5,33 @@ namespace DataLib.Table.Impl;
 public abstract class DBContextBasic : IDBContext
 {
     #region Properties
-     
+
+    /// <summary>
+    /// Gets or sets the data table.
+    /// </summary>
+    /// <value>
+    /// The data table.
+    /// </value>
+    [Newtonsoft.Json.JsonIgnore]
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IDataTable DataTable { get; private set; }
+
     /// <summary>
     /// DB Path
     /// </summary>
-    public string DBPath { get; set; } 
+    public string DBPath { get; set; }
 
     #endregion Properties
 
     #region OnConfiguring
 
     /// <summary>
-    /// DBContext
+    /// Initializes a new instance of the <see cref="DBContextBasic"/> class.
     /// </summary>
-    public DBContextBasic()
+    /// <param name="table">The table.</param>
+    public DBContextBasic(IDataTable table)
     {
+        this.DataTable = table;
         this.OnConfiguring();
     }
 
@@ -50,6 +62,12 @@ public abstract class DBContextBasic : IDBContext
     /// <param name="setting">The setting.</param>
     /// <returns>IDataTable</returns>
     public abstract Task<IDataTable> QueryAsync(IQuerySetting setting);
+
+    /// <summary>
+    /// Queries the row count.
+    /// </summary>  
+    /// <returns>int</returns>
+    public abstract Task<int> QueryRowCountAsync();
 
     #endregion Query
 
@@ -134,7 +152,7 @@ public abstract class DBContextBasic : IDBContext
     /// <param name="sql">The SQL.</param>
     /// <exception cref="ArgumentNullException">sql</exception>
     public virtual Task ExecuteNonQueryAsync(string sql)
-    { 
+    {
         throw new NotImplementedException();
     }
 

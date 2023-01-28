@@ -20,15 +20,7 @@ public interface IMergeSetting
     /// The left columns.
     /// </value>
     IDataColumnCollection LeftColumns { get; set; }
-
-    /// <summary>
-    /// Gets or sets the left table.
-    /// </summary>
-    /// <value>
-    /// The left table.
-    /// </value>
-    string LeftTable { get; set; }
-
+     
     /// <summary>
     /// Gets or sets the macth cloumns.
     /// </summary>
@@ -59,7 +51,12 @@ public interface IMergeSetting
     /// <value>
     /// The right table.
     /// </value>
-    string RightTable { get; set; }
+    string RightTableId { get; set; }
+
+    /// <summary>
+    /// 右侧数据表名
+    /// </summary>
+    string RightTableName { get; set; }
 
     /// <summary>
     /// Gets or sets the table.
@@ -67,5 +64,13 @@ public interface IMergeSetting
     /// <value>
     /// The table.
     /// </value>
-    string Table { get; set; }
+    string TableId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the table.
+    /// </summary>
+    /// <value>
+    /// The name of the table.
+    /// </value>
+    string TableName { get; set; }
 }

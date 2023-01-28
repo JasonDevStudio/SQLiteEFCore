@@ -32,19 +32,20 @@ internal class Hdf5Test
 
     public string DBPath { get; set; }
 
-    public int ParaCount { get; set; } = 50;
+    public int ParaCount { get; set; } = 10;
 
-    public int RowCount { get; set; } = 10000;
+    public int RowCount { get; set; } = 10;
 
     public async Task<IDataTable> CreateDataTableAsync(string tableName)
     {
+        var start = 10;
         this.DBPath = string.IsNullOrWhiteSpace(DBPath) ? Path.Combine(@"C:\Users\jiede\Documents\HDF5", $"{DateTime.Now:yyyyMMddHH}.H5") : DBPath;
         if (File.Exists(this.DBPath))
             File.Delete(this.DBPath);
 
         var st = Stopwatch.StartNew();
         var columns = new DataColumnCollection();
-        columns.Add(new DataColumn() { Name = "RowKey", Field = "RowKey", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
+        columns.Add(new DataColumn() { Name = "RowKey", Field = "RowKey", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
         columns.Add(new DataColumn() { Name = "WaferId", Field = "WaferId", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
         columns.Add(new DataColumn() { Name = "DieX", Field = "DieX", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
         columns.Add(new DataColumn() { Name = "DieY", Field = "DieY", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
@@ -52,7 +53,7 @@ internal class Hdf5Test
         columns.Add(new DataColumn() { Name = "OrigY", Field = "OrigY", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Int32 });
         columns.Add(new DataColumn() { Name = "Product", Field = "Product", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.String });
 
-        for (int i = 0; i < ParaCount; i++)
+        for (int i = start; i < start + ParaCount; i++)
         {
             columns.Add(new DataColumn() { Name = $"Para_{i}", Field = $"Para_{i}", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Double });
         }
@@ -74,7 +75,7 @@ internal class Hdf5Test
         for (int i = 0; i < RowCount; i++)
         {
             var row = table.NewRow();
-            row["RowKey"] = Guid.NewGuid().ToString();
+            row["RowKey"] = i;
             row["Product"] = $"Hi3680_{i}";
             row["WaferId"] = $"SDS_{waferId++}";
             row["DieX"] = i;
@@ -87,7 +88,7 @@ internal class Hdf5Test
 
             table.Rows.Add(row);
 
-            if (waferId > 25)
+            if (waferId > 50)
                 waferId = 1;
         }
 
@@ -138,7 +139,7 @@ internal class Hdf5Test
         stop.Stop();
         AnsiConsole.Write(new Rule($"[Green] Processing Hdf5QueryFilter end. times {stop.Elapsed.TotalSeconds} s [/]").Centered());
         stop.Restart();
-        var datatable = table.Query(querySetting);
+        var datatable = await table.QueryAsync(querySetting);
         stop.Stop();
         AnsiConsole.Write(new Rule($"[Green] query data end. count {datatable.RowCount}, times {stop.Elapsed.TotalSeconds} s [/]").Centered());
 
@@ -151,6 +152,51 @@ internal class Hdf5Test
 
         // Add some rows 
         datatable.Rows.ForEach(row =>
+        {
+            var values = new string[row.Values.Length + 1];
+            values[0] = $"{row.RowIndex}";
+            for (int i = 0; i < row.Values.Length; i++)
+                values[i + 1] = $"{row.Values.GetValue(i)}";
+
+            actable.AddRow(values);
+        });
+
+        // Render the table to the console
+        AnsiConsole.Write(actable);
+    }
+
+    public async Task MergeColumnsTest()
+    {
+        var setting = new MergeSetting();
+        var table = new DataTable { Name = "HDF5_TABLE_TEST", DBFile = Path.Combine(@"C:\Users\jiede\Documents\HDF5", "2023012816.H5"), OriginalTable = "HDF5_TABLE_TEST" };
+        var col1 = new DataColumn { Name = "Para_10", ColumnIndex = 1, Field = "Para_10", TypeCode = TypeCode.Double };
+        var col2 = new DataColumn { Name = "Para_1", ColumnIndex = 1, Field = "Para_1", TypeCode = TypeCode.Double };
+        var col0 = new DataColumn { Name = "RowKey", ColumnIndex = 1, Field = "RowKey", TypeCode = TypeCode.Int32 };
+        setting.MacthCloumns.Add((col0, col0));
+        setting.LeftColumns.Add(col0);
+        setting.LeftColumns.Add(col2);
+        setting.RightColumns.Add(col0);
+        setting.RightColumns.Add(col1);
+        setting.NewColumns.Add(col1);
+        setting.TableId = Path.Combine(@"C:\Users\jiede\Documents\HDF5", "2023012816.H5");
+        setting.RightTableId = Path.Combine(@"C:\Users\jiede\Documents\HDF5", "2023012817.H5");
+        setting.TableName = "HDF5_TABLE_TEST";
+        setting.RightTableName = "HDF5_TABLE_TEST";
+        setting.Join = DataLib.JoinMode.INNER_JOIN;
+        await table.MergeColumnsAsync(setting);
+
+        table.Columns.AddRange(setting.LeftColumns);
+        table.Columns.AddRange(setting.RightColumns);
+        var newtable = await table.QueryAsync(new QuerySetting { Table = table, Columns = table.Columns });
+        // Create a table
+        var actable = new Table();
+
+        // Add some columns
+        actable.AddColumn(new TableColumn("RowIndex").Centered());
+        newtable.Columns.ForEach(col => actable.AddColumn(new TableColumn(col.Field).Centered()));
+
+        // Add some rows 
+        newtable.Rows.ForEach(row =>
         {
             var values = new string[row.Values.Length + 1];
             values[0] = $"{row.RowIndex}";

@@ -5,9 +5,12 @@ using System.Diagnostics;
 using System.Net;
 using System.Numerics;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using DataLib.Table;
+using DataLib.Table.Impl;
 using HDF.PInvoke;
 using HDF5.NET;
 using HDF5CSharp;
@@ -16,6 +19,9 @@ using Newtonsoft.Json.Linq;
 using Spectre.Console;
 using static HDF.PInvoke.H5F;
 using static HDF.PInvoke.H5O.hdr_info_t;
+using static HDF.PInvoke.H5T;
+using DataColumn = DataLib.Table.Impl.DataColumn;
+using DataTable = DataLib.Table.Impl.DataTable;
 using Rule = Spectre.Console.Rule;
 
 namespace HDF5.ConsoleTest
@@ -36,9 +42,12 @@ namespace HDF5.ConsoleTest
             // WriteLong2DTable();
 
             var tester = new Hdf5Test();
-            var table = await tester.CreateDataTableAsync("HDF5_TABLE_TEST");
-            await tester.WriteDataTableAsync(table); 
-            await tester.QueryDataAsync(table);
+            //var table = await tester.CreateDataTableAsync("HDF5_TABLE_TEST");
+            //await tester.WriteDataTableAsync(table);
+            //await tester.QueryDataAsync(table);
+
+            await tester.MergeColumnsTest();
+
             AnsiConsole.Ask<string>("input any key exit.");
         }
 
@@ -692,6 +701,8 @@ namespace HDF5.ConsoleTest
             AnsiConsole.Write(new Rule($"[White] count {data.Count}, times {st.Elapsed.TotalSeconds} s[/]").Centered());
             AnsiConsole.Ask<string>("Input any key exit;");
         }
+
+       
     }
 
     [Serializable]

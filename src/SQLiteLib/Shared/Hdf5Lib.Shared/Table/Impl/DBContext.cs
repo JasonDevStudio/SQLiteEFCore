@@ -8,6 +8,13 @@ using HDF5.NET;
 using System.Runtime.InteropServices;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using System.Data.Common;
+using System.Text.RegularExpressions;
+using System.Runtime.CompilerServices;
+using DataTable = DataLib.Table.Impl.DataTable;
+using DataColumnCollection = DataLib.Table.Impl.DataColumnCollection;
+using System;
+using System.IO;
 
 namespace Hdf5Lib.Table.Impl;
 
@@ -19,6 +26,14 @@ public class DBContext : DBContextBasic
     /// The deleted rows
     /// </summary>
     private List<int> deletedRows = new();
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DBContext"/> class.
+    /// </summary>
+    /// <param name="table">The table.</param>
+    public DBContext(IDataTable table) : base(table)
+    {
+    }
 
     /// <summary>
     /// Adds the columns asynchronous.
@@ -254,37 +269,106 @@ public class DBContext : DBContextBasic
         var table = new DataTable(setting.Table, setting.Columns.Columns);
 
         // 对查询条件进行过滤
-        setting.Parameters.ForEach(async p =>
+        for (int i = 0; i < setting.Parameters.Count; i++)
         {
-            var h5dataset = h5group.Dataset(p.DataColumn.Field);
-            var dataValues = await this.ReadDataAsync(h5dataset, p.DataColumn);
-            var indexs = p.Filter(dataValues);
-            rowIndexs = indexs?.Any() ?? false ? rowIndexs?.Intersect(indexs) : rowIndexs;
-        });
+            var parameter = setting.Parameters[i];
+            var h5dataset = h5group.Dataset(parameter.DataColumn.Field);
+            var dataValues = await this.ReadDataAsync(h5dataset, parameter.DataColumn);
+            var indexs = parameter.Filter(dataValues);
+
+            if (rowIndexs.Any())
+                rowIndexs = (indexs?.Any() ?? false) ? rowIndexs?.Intersect(indexs).ToList() : rowIndexs;
+            else
+                rowIndexs = (indexs?.Any() ?? false) ? indexs : rowIndexs;
+        }
 
         // 提出已删除的数据
         if (deletedRows?.Any() ?? false)
-            rowIndexs = rowIndexs.Except(deletedRows);
+            rowIndexs = rowIndexs.Except(deletedRows).ToList();
 
         //按列取出数据
-        setting.Columns.ForEach(async col =>
+        var rowIndex = 0;
+        for (int i = 0; i < table.ColumnCount; i++)
         {
+            var col = table.Columns[i];
             var h5dataset = h5group.Dataset(col.Field);
             var dataValues = await this.ReadDataAsync(h5dataset, col);
+            rowIndex = 0;
 
-            foreach (var index in rowIndexs)
+            if (rowIndexs?.Any() ?? false)
             {
-                var row = table.RowCount > index ? table.Rows[index] : table.NewRow();
-                row[col.ColumnIndex] = dataValues.GetValue(index);
-                row.RowIndex = index;
-                table.Rows.Add(row);
+                foreach (var index in rowIndexs)
+                {
+                    if (table.RowCount > rowIndex)
+                    {
+                        var row = table.Rows[rowIndex];
+                        row[col.ColumnIndex] = dataValues.GetValue(index);
+                        row.RowIndex = index;
+                    }
+                    else
+                    {
+                        var row = table.NewRow();
+                        row[col.ColumnIndex] = dataValues.GetValue(index);
+                        row.RowIndex = index;
+                        table.Rows.Add(row);
+                    }
+
+                    rowIndex++;
+                }
             }
-        });
+            else
+            {
+                for (int index = 0; index < dataValues.Length; index++)
+                { 
+                    if (table.RowCount > rowIndex)
+                    {
+                        var row = table.Rows[rowIndex];
+                        row[col.ColumnIndex] = dataValues.GetValue(index);
+                        row.RowIndex = index;
+                    }
+                    else
+                    {
+                        var row = table.NewRow();
+                        row[col.ColumnIndex] = dataValues.GetValue(index);
+                        row.RowIndex = index;
+                        table.Rows.Add(row);
+                    }
+
+                    rowIndex++;
+                }
+            }
+        }
 
         h5file.Dispose();
         return table;
     }
 
+    /// <summary>
+    /// Queries the row count.
+    /// </summary>
+    /// <param name="setting">The setting.</param>
+    /// <returns></returns>
+    public override async Task<int> QueryRowCountAsync()
+    {
+        var count = 0;
+        var column = this.DataTable.Columns[0];
+        using (var h5file = H5File.OpenRead(this.DBPath))
+        {
+            var h5group = h5file.Group(this.DataTable.OriginalTable);
+            var h5dataset = h5group.Dataset(column.Field);
+            var dataValues = await this.ReadDataAsync(h5dataset, column);
+            count = dataValues.Length;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Reads the data asynchronous.
+    /// </summary>
+    /// <param name="dataset">The dataset.</param>
+    /// <param name="column">The column.</param>
+    /// <returns></returns>
     private async Task<Array> ReadDataAsync(H5Dataset dataset, IDataColumn column)
     {
         switch (column.TypeCode)
@@ -312,6 +396,12 @@ public class DBContext : DBContextBasic
         }
     }
 
+    /// <summary>
+    /// Reads the data.
+    /// </summary>
+    /// <param name="dataset">The dataset.</param>
+    /// <param name="column">The column.</param>
+    /// <returns></returns>
     private Array ReadData(H5Dataset dataset, IDataColumn column)
     {
         switch (column.TypeCode)
@@ -414,17 +504,159 @@ public class DBContext : DBContextBasic
         });
     }
 
+    /// <summary>
+    /// Gets the default array.
+    /// </summary>
+    /// <param name="column">The column.</param>
+    /// <param name="length">The length.</param>
+    /// <returns>Array</returns>
+    private Array GetDefaultArray(IDataColumn column, int length)
+    {
+        Array values = null;
+
+        switch (column.TypeCode)
+        {
+            case TypeCode.Boolean:
+            case TypeCode.Int16:
+            case TypeCode.Int32:
+            case TypeCode.UInt16:
+            case TypeCode.UInt32:
+                values = Enumerable.Range(0, length).Select(z => 0).ToArray();
+                break;
+            case TypeCode.Int64:
+            case TypeCode.UInt64:
+                values = Enumerable.Range(0, length).Select(z => 0L).ToArray();
+                break;
+            case TypeCode.Single:
+            case TypeCode.Double:
+            case TypeCode.Decimal:
+                values = Enumerable.Range(0, length).Select(z => double.NaN).ToArray();
+                break;
+            case TypeCode.DateTime:
+            case TypeCode.String:
+            default:
+                values = Enumerable.Range(0, length).Select(z => string.Empty).ToArray();
+                break;
+        }
+
+        return values;
+    }
+
     protected override async Task OnConfiguring() => await Task.CompletedTask;
 
     public override void Dispose()
     {
     }
 
-    public override async Task MergeColumnsAsync(IMergeSetting setting) => await Task.CompletedTask;
+    public override async Task MergeColumnsAsync(IMergeSetting setting)
+    {
+        var maxColumn = 100;
+        var maxRow = 1000000;
+        var leftTable = new DataTable(setting.LeftColumns) { DBFile = setting.TableId, OriginalTable = setting.TableName }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable
+        var rightTable = new DataTable(setting.RightColumns) { DBFile = setting.RightTableId, OriginalTable = setting.RightTableName }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable
+
+        if (leftTable.ColumnCount > maxColumn)
+            throw new Exception($"The left data table exceeds the maximum allowed column number of {maxColumn} columns.");
+
+        if (rightTable.ColumnCount > maxColumn)
+            throw new Exception($"The right data table exceeds the maximum allowed column number of {maxColumn} columns.");
+
+        leftTable.StoreRowCount = await leftTable.QueryRowCountAsync();
+        if (leftTable.StoreRowCount > maxRow)
+            throw new Exception($"The data table on the left exceeds the maximum allowed row number of {maxRow} rows.");
+
+        rightTable.StoreRowCount = await rightTable.QueryRowCountAsync();
+        if (rightTable.StoreRowCount > maxRow)
+            throw new Exception($"The data table on the right exceeds the maximum allowed row number of {maxRow} rows.");
+
+        var leftQSetting = new QuerySetting() { Columns = setting.LeftColumns, Table = leftTable };
+        var rightQSetting = new QuerySetting() { Columns = setting.RightColumns, Table = rightTable };
+        var leftData = leftTable.QueryAsync(leftQSetting); // 从左表数据文件中加载数据到内存
+        var rightData = rightTable.QueryAsync(rightQSetting); // 从右表数据文件中加载数据到内存
+        var leftRows = await leftData;
+        var rightRows = await rightData;
+        var newTable = new DataTable(leftTable); 
+        newTable.Columns.AddRange(setting.LeftColumns);
+        newTable.Columns.AddRange(setting.RightColumns);
+
+        Func<IDataRow, List<(IDataColumn Left, IDataColumn right)>, bool, string> key = (row, mathColumns, isleft) => isleft ? string.Join("_", mathColumns.Select(m => $"{row[m.Left.Field]}")) : string.Join("_", mathColumns.Select(m => $"{row[m.right.Field]}"));
+
+        Func<IDataTable, IDataRow, IDataRow, IDataColumnCollection, IDataColumnCollection, IDataRow> get = (table, leftRow, rightRow, leftColumns, rightColumns) =>
+        {
+            var row = table.NewRow();
+            leftColumns.ForEach(column => row[column.Field] = leftRow[column.Field]);
+            rightColumns.ForEach(column => row[column.Field] = rightRow[column.Field]);
+            return row;
+        };
+
+        var linq = from lr in leftRows.Rows.Rows
+                   join rr in rightRows.Rows.Rows
+                   on key(lr, setting.MacthCloumns, true) equals key(rr, setting.MacthCloumns, false)
+                   select get(newTable, lr, rr, setting.LeftColumns, setting.RightColumns);
+
+        foreach (var row in linq)
+            newTable.Rows.Add(row);
+
+        leftRows.Rows.Rows.Clear();
+        rightRows.Rows.Rows.Clear();
+        await newTable.InsertAsync(newTable.Rows);
+    }
 
     public override async Task MergeRowsAsync(IUpdateSetting setting) => await Task.CompletedTask;
 
-    public override async Task MergeRowsAsync(IMergeSetting setting) => await Task.CompletedTask;
+    public override async Task MergeRowsAsync(IMergeSetting setting)
+    {
+        var newTable = new DataTable();
+        var leftTable = new DataTable(setting.LeftColumns) { DBFile = setting.TableId, OriginalTable = setting.TableName, Name = setting.TableName }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable
+        var rightTable = new DataTable(setting.RightColumns) { DBFile = setting.RightTableId }; // 生产项目需要进行适配， 通过tableId 查找对应的 IDataTable         
+        leftTable.StoreRowCount = await leftTable.QueryRowCountAsync();
+        newTable.Columns.AddRange(new DataColumnCollection(setting.LeftColumns, newTable));
+        newTable.Columns.AddRange(new DataColumnCollection(setting.NewColumns, newTable));
+
+        var fileId = Hdf5.OpenFile(leftTable.DBFile);
+        var groupId = Hdf5.CreateOrOpenGroup(fileId, leftTable.OriginalTable);
+
+        using (var leftFile = H5File.OpenRead(leftTable.DBFile))
+        using (var rightFile = H5File.OpenRead(rightTable.DBFile))
+        {
+            var leftGroup = leftFile.Group(leftTable.OriginalTable);
+            var rightGroup = rightFile.Group(rightTable.OriginalTable);
+
+            for (int i = 0; i < setting.MacthCloumns.Count; i++)
+            {
+                var math = setting.MacthCloumns[i];
+                var leftDataset = leftGroup.Dataset(math.Left.Field);
+                var rightDataset = leftGroup.Dataset(math.right.Field);
+                var leftValues = await this.ReadDataAsync(leftDataset, math.Left);
+                var rightValues = await this.ReadDataAsync(rightDataset, math.right);
+                var values = new object[leftValues.Length + rightValues.Length];
+
+                for (int li = 0; li < leftValues.Length; li++)
+                    values[li] = leftValues.GetValue(li);
+
+                for (int ri = 0; ri < rightValues.Length; ri++)
+                    values[ri] = rightValues.GetValue(ri);
+
+                this.WriteData(groupId, math.Left, values);
+            }
+
+            if (setting.NewColumns?.Any() ?? false)
+            {
+                for (int i = 0; i < setting.NewColumns.Count; i++)
+                {
+                    var col = setting.NewColumns[i];
+                    var rightDataset = leftGroup.Dataset(col.Field);
+                    var rightValues = await this.ReadDataAsync(rightDataset, col);
+                    var values = this.GetDefaultArray(col, leftTable.StoreRowCount + rightValues.Length);
+
+                    for (int ri = 0; ri < rightValues.Length; ri++)
+                        values.SetValue(rightValues.GetValue(ri), ri + leftTable.StoreRowCount);
+
+                    this.WriteData(groupId, col, values);
+                }
+            }
+        }
+    }
 
     public override async Task RenameAsync(string table, string rename) => await Task.CompletedTask;
 
