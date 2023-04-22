@@ -14,12 +14,12 @@ public abstract class DBContextBasic : IDBContext
     /// </value>
     [Newtonsoft.Json.JsonIgnore]
     [System.Text.Json.Serialization.JsonIgnore]
-    public IDataTable DataTable { get; private set; }
+    public IDataTable DataTable { get; init; }
 
     /// <summary>
     /// DB Path
     /// </summary>
-    public string DBPath { get; set; }
+    public string DBFile { get; init; }
 
     #endregion Properties
 
@@ -54,13 +54,6 @@ public abstract class DBContextBasic : IDBContext
     /// </summary>
     /// <param name="setting">The setting.</param>
     /// <returns>IDataTable</returns>
-    public abstract IDataTable Query(IQuerySetting setting);
-
-    /// <summary>
-    /// Queries the asynchronous.
-    /// </summary>
-    /// <param name="setting">The setting.</param>
-    /// <returns>IDataTable</returns>
     public abstract Task<IDataTable> QueryAsync(IQuerySetting setting);
 
     /// <summary>
@@ -81,11 +74,17 @@ public abstract class DBContextBasic : IDBContext
     public abstract Task CreateTableAsync(IDataTable table);
 
     /// <summary>
-    /// 批量写入数据库
+    /// 写入数据
     /// </summary>
-    /// <param name="rows">需要写入数据库的数据行集合</param>
     /// <returns>Task</returns>
-    public abstract Task<int> InsertAsync(IDataRowCollection rows);
+    public abstract Task WriteAsync();
+
+    /// <summary>
+    /// Inserts the asynchronous.
+    /// </summary>
+    /// <param name="rows">The rows.</param>
+    /// <returns></returns>
+    public abstract Task WriteAsync(IDataRowCollection rows);
 
     /// <summary>
     /// 新增数据列
@@ -93,13 +92,6 @@ public abstract class DBContextBasic : IDBContext
     /// <param name="setting">UpdateSetting</param>
     /// <returns>Task</returns>
     public abstract Task AddColumnsAsync(IUpdateSetting setting);
-
-    /// <summary>
-    /// 删除数据
-    /// </summary>
-    /// <param name="setting">UpdateSetting</param>
-    /// <returns>Task</returns>
-    public abstract Task DelAsync(IUpdateSetting setting);
 
     /// <summary>
     /// 批量更新数据库
@@ -133,20 +125,6 @@ public abstract class DBContextBasic : IDBContext
     public abstract Task MergeColumnsAsync(IMergeSetting setting);
 
     /// <summary>
-    /// 删除数据表
-    /// </summary>
-    /// <param name="table">需要删除的数据表名</param>
-    /// <returns>Task</returns>
-    public abstract Task DropAsync(string table);
-
-    /// <summary>
-    /// 数据表重命名
-    /// </summary>
-    /// <param name="table">需要删除的数据表名</param>
-    /// <returns>Task</returns>
-    public abstract Task RenameAsync(string table, string rename);
-
-    /// <summary>
     /// Executes the non query asynchronous.
     /// </summary>
     /// <param name="sql">The SQL.</param>
@@ -156,5 +134,5 @@ public abstract class DBContextBasic : IDBContext
         throw new NotImplementedException();
     }
 
-    #endregion Insert Del Update Del Rename Drop     
+    #endregion Insert Del Update Del Rename Drop
 }

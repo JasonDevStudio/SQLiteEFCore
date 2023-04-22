@@ -58,7 +58,7 @@ internal class Hdf5Test
             columns.Add(new DataColumn() { Name = $"Para_{i}", Field = $"Para_{i}", ColumnIndex = columns.Count, VisbleIndex = columns.Count, TypeCode = TypeCode.Double });
         }
 
-        var table = await DataTable.CreateTableAsync(tableName, tableName, columns, this.DBPath);
+        var table = await DataTable.CreateTableAsync(tableName, tableName, columns);
 
 
         st.Stop();
@@ -97,7 +97,7 @@ internal class Hdf5Test
 
         stop.Restart();
         AnsiConsole.Write(new Rule($"[Green] Start write table to hdf5.... [/]").Centered());
-        await table.InsertAsync(table.Rows);
+        await table.WriteAsync(table.Rows);
         stop.Stop();
         AnsiConsole.Write(new Rule($"[Green] Write table to hdf5 end, times {stop.Elapsed.TotalSeconds} s, count {table.RowCount}... [/]").Centered());
     }
@@ -168,7 +168,7 @@ internal class Hdf5Test
     public async Task MergeColumnsTest()
     {
         var setting = new MergeSetting();
-        var table = new DataTable { Name = "HDF5_TABLE_TEST", DBFile = Path.Combine(@"C:\Users\jiede\Documents\HDF5", "2023012816.H5"), OriginalTable = "HDF5_TABLE_TEST" };
+        var table = new DataTable { Name = "HDF5_TABLE_TEST",  OriginalTable = "HDF5_TABLE_TEST" };
         var col1 = new DataColumn { Name = "Para_10", ColumnIndex = 1, Field = "Para_10", TypeCode = TypeCode.Double };
         var col2 = new DataColumn { Name = "Para_1", ColumnIndex = 1, Field = "Para_1", TypeCode = TypeCode.Double };
         var col0 = new DataColumn { Name = "RowKey", ColumnIndex = 1, Field = "RowKey", TypeCode = TypeCode.Int32 };
@@ -213,7 +213,7 @@ internal class Hdf5Test
     public async Task MergeRowsTest()
     {
         var setting = new MergeSetting();
-        var table = new DataTable { Name = "HDF5_TABLE_TEST", DBFile = Path.Combine(AppContext.BaseDirectory, "2023012816.H5"), OriginalTable = "HDF5_TABLE_TEST" };
+        var table = new DataTable { Name = "HDF5_TABLE_TEST", OriginalTable = "HDF5_TABLE_TEST" };
         var index = 0;
         var colA = new DataColumn { Name = "RowKey", ColumnIndex = 0, Field = "RowKey", TypeCode = TypeCode.Int32, IsAutoincrement = true };
         var colB = new DataColumn { Name = "WaferId", ColumnIndex = 1, Field = "WaferId", TypeCode = TypeCode.String };

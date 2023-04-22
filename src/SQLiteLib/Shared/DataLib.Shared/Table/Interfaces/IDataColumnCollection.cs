@@ -57,7 +57,7 @@
         /// 复制数据列举集合
         /// Copies the entire System.Collections.Generic.List`1 to a compatible one-dimensional array, starting at the beginning of the target array.
         /// </summary>
-        IDataColumnCollection Copy();
+        IDataColumnCollection Clone();
 
         /// <summary>
         /// Where

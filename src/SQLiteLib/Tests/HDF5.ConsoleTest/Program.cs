@@ -28,7 +28,7 @@ namespace HDF5.ConsoleTest
 {
     internal class Program
     {
-        public static int RowCount = 10000000;
+        public static int RowCount = 1000000;
         public static int ParaCount { get; set; } = 100;
 
         static async Task Main(string[] args)

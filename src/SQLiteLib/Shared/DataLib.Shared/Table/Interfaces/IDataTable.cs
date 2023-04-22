@@ -45,12 +45,9 @@
         int ColumnCount { get; }
 
         /// <summary>
-        /// Gets or sets the database file.
+        /// 数据文件
         /// </summary>
-        /// <value>
-        /// The database file.
-        /// </value>
-        string DBFile { get; set; }
+        string DBFile { get; }
 
         /// <summary>
         /// Gets or sets the mode.
@@ -84,22 +81,28 @@
         IDataRow NewRow();
 
         /// <summary>
+        /// 数据表克隆
+        /// </summary>
+        /// <returns></returns>
+        IDataTable Clone();
+
+        /// <summary>
         /// 刷新图表
         /// </summary>
         Task ReflashAsync();
 
         /// <summary>
-        /// 批量写入数据库
+        /// 写入数据
         /// </summary>
         /// <returns>Task</returns>
         Task WriteAsync();
 
         /// <summary>
-        /// 批量写入数据库
+        /// Inserts the asynchronous.
         /// </summary>
-        /// <param name="rows">需要写入数据库的数据行集合</param>
-        /// <returns>Task</returns>
-        Task InsertAsync(IDataRowCollection rows);
+        /// <param name="rows">The rows.</param>
+        /// <returns></returns>
+        Task WriteAsync(IDataRowCollection rows);
 
         /// <summary>
         /// 新增数据列
@@ -107,13 +110,6 @@
         /// <param name="setting">UpdateSetting</param>
         /// <returns>Task</returns>
         Task AddColumnsAsync(IUpdateSetting setting);
-
-        /// <summary>
-        /// 删除数据
-        /// </summary>
-        /// <param name="setting">UpdateSetting</param>
-        /// <returns>Task</returns>
-        Task DelAsync(IUpdateSetting setting);
 
         /// <summary>
         /// 批量写入数据库
@@ -147,32 +143,11 @@
         Task MergeColumnsAsync(IMergeSetting setting);
 
         /// <summary>
-        /// 删除数据表
-        /// </summary>
-        /// <param name="table">需要删除的数据表名</param>
-        /// <returns>Task</returns>
-        Task DropAsync(string table = null);
-
-        /// <summary>
-        /// 数据表重命名
-        /// </summary>
-        /// <param name="table">需要删除的数据表名</param>
-        /// <returns>Task</returns>
-        Task RenameAsync(string table, string rename);
-
-        /// <summary>
         /// 查询数据
         /// </summary>
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         Task<IDataTable> QueryAsync(IQuerySetting setting);
-
-        /// <summary>
-        /// 查询数据
-        /// </summary>
-        /// <param name="setting">QuerySetting</param>
-        /// <returns>IDataRowCollection</returns>
-        IDataTable Query(IQuerySetting setting);
 
         /// <summary>
         /// 查询数据

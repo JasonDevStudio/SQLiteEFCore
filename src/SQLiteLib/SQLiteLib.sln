@@ -29,6 +29,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DuckDB.Shared", "Shared\Duc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuckDBLib", "Lib\DuckDBLib\DuckDBLib.csproj", "{D202D9FD-583C-494A-98B5-3FFCBB9CF00F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuckDB.ConsoleTest", "Tests\DuckDB.ConsoleTest\DuckDB.ConsoleTest.csproj", "{7EF9A488-0532-4134-924F-F9D9321C8300}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,10 @@ Global
 		{D202D9FD-583C-494A-98B5-3FFCBB9CF00F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D202D9FD-583C-494A-98B5-3FFCBB9CF00F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D202D9FD-583C-494A-98B5-3FFCBB9CF00F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EF9A488-0532-4134-924F-F9D9321C8300}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EF9A488-0532-4134-924F-F9D9321C8300}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EF9A488-0532-4134-924F-F9D9321C8300}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EF9A488-0532-4134-924F-F9D9321C8300}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,6 +80,7 @@ Global
 		{BB05ECB7-AB85-4FF7-9B69-E6D47E483A9A} = {B5386B1D-5DC7-406E-A60D-263556A3318C}
 		{C80AE3FC-A278-46A3-A516-6BBA544CCE75} = {3E6B3079-071F-4448-888E-1A0FEBEDD325}
 		{D202D9FD-583C-494A-98B5-3FFCBB9CF00F} = {B5386B1D-5DC7-406E-A60D-263556A3318C}
+		{7EF9A488-0532-4134-924F-F9D9321C8300} = {19553B58-4625-4438-9897-1D956A7F497B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DE575630-5A04-4479-A10F-2AFD6A962D1B}

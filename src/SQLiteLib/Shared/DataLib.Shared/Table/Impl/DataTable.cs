@@ -14,11 +14,6 @@ namespace DataLib.Table.Impl
         #region 属性，成员
 
         /// <summary>
-        /// 数据库文件地址
-        /// </summary>
-        public static string DBPath { get; set; }
-
-        /// <summary>
         /// 数据上下文
         /// </summary>
         public IDBContext Context { get; set; }
@@ -39,16 +34,9 @@ namespace DataLib.Table.Impl
         public string OriginalTable { get; set; }
 
         /// <summary>
-        /// Gets or sets the database file.
+        /// 数据文件
         /// </summary>
-        /// <value>
-        /// The database file.
-        /// </value>
-        public string DBFile
-        {
-            get => this.Context?.DBPath;
-            set => this.Context.DBPath = value;
-        }
+        public string DBFile => this.Context?.DBFile;
 
         /// <summary>
         /// Gets or sets the mode.
@@ -102,14 +90,14 @@ namespace DataLib.Table.Impl
         /// </summary>
         public DataTable()
         {
-            var pataName = "table";
-            var parameter = new NamedParameter(pataName, this);
-            this.Context = GlobalService.GetService<IDBContext>(this.Mode, parameter);
+            var paraName = "table"; 
             this.Id = Guid.NewGuid().ToString();
             this.Rows = new DataRowCollection();
             this.Columns = new DataColumnCollection();
             this.Rows.Table = this;
             this.Columns.Table = this;
+            var parameter = new NamedParameter(paraName, this);
+            this.Context = GlobalService.GetService<IDBContext>(this.Mode, parameter);
         }
 
         /// <summary>
@@ -118,8 +106,7 @@ namespace DataLib.Table.Impl
         /// <param name="source">IDataTable</param>
         public DataTable(IDataTable source) : this(source, null)
         {
-            this.Id = source.Id; 
-            this.DBFile = source.DBFile;
+            this.Id = source.Id;
             this.OriginalTable = source.OriginalTable;
             this.Name = source.Name;
             this.Columns.AddRange(source.Columns);
@@ -135,15 +122,8 @@ namespace DataLib.Table.Impl
             this.Id = source.Id;
             this.Name = Name;
             this.OriginalTable = source.OriginalTable;
-            this.Columns = new DataColumnCollection((columns?.Any() ?? false) ? columns.Select(m => new DataColumn(m)).ToList<IDataColumn>() : source.Columns.Select(m => new DataColumn(m)).ToList<IDataColumn>(), this);
-
-            for (int i = 0; i < this.ColumnCount; i++)
-            {
-                var col = this.Columns[i];
-                col.OriginTableId = this.Id;
-                col.Table = this;
-                col.ColumnIndex = i;
-            }
+            this.Columns.Columns.Clear();
+            this.Columns.AddRange(columns);
         }
 
         /// <summary>
@@ -165,14 +145,13 @@ namespace DataLib.Table.Impl
         /// <param name="columns">数据列集合</param>
         /// <param name="dbfile">数据文件</param>
         /// <returns>IDataTable</returns>
-        public static async Task<IDataTable> CreateTableAsync(string tableName, string originalTable, IDataColumnCollection columns, string dbfile)
+        public static async Task<IDataTable> CreateTableAsync(string tableName, string originalTable, IDataColumnCollection columns)
         {
             var table = new DataTable();
             table.Id = Guid.NewGuid().ToString();
             table.Name = tableName;
             table.OriginalTable = originalTable;
             table.Columns = columns;
-            table.DBFile = dbfile;
 
             foreach (var col in columns.Columns)
             {
@@ -181,7 +160,6 @@ namespace DataLib.Table.Impl
             }
 
             await table.Context.CreateTableAsync(table);
-
             return table;
         }
 
@@ -199,6 +177,17 @@ namespace DataLib.Table.Impl
         }
 
         /// <summary>
+        /// 数据表Clone
+        /// </summary>
+        /// <returns>IDataTable</returns>
+        public IDataTable Clone()
+        {
+            var table = new DataTable(this);
+            table.Columns = this.Columns.Clone();
+            return table;
+        }
+
+        /// <summary>
         /// 刷新图表
         /// </summary>
         public async Task ReflashAsync()
@@ -211,14 +200,14 @@ namespace DataLib.Table.Impl
         /// 批量写入数据库
         /// </summary>
         /// <returns>Task</returns>
-        public async Task WriteAsync() => await this.Context.InsertAsync(this.Rows);
+        public async Task WriteAsync() => await this.Context.WriteAsync(this.Rows);
 
         /// <summary>
-        /// 批量写入数据库
+        /// 
         /// </summary>
-        /// <param name="rows">需要写入数据库的数据行集合</param>
-        /// <returns>Task</returns>
-        public async Task InsertAsync(IDataRowCollection rows) => await this.Context.InsertAsync(rows);
+        /// <param name="rows"></param>
+        /// <returns></returns> 
+        public async Task WriteAsync(IDataRowCollection rows) => await this.Context.WriteAsync(this.Rows);
 
         /// <summary>
         /// 新增数据列
@@ -235,13 +224,6 @@ namespace DataLib.Table.Impl
                     this.Columns.Add(col);
             }
         }
-
-        /// <summary>
-        /// 删除数据
-        /// </summary>
-        /// <param name="setting">UpdateSetting</param>
-        /// <returns>Task</returns>
-        public async Task DelAsync(IUpdateSetting setting) => await this.Context.DelAsync(setting);
 
         /// <summary>
         /// 批量写入数据库
@@ -275,36 +257,11 @@ namespace DataLib.Table.Impl
         public async Task MergeRowsAsync(IMergeSetting setting) => await this.Context.MergeRowsAsync(setting);
 
         /// <summary>
-        /// 删除数据表
-        /// </summary>
-        /// <param name="table">需要删除的数据表名</param>
-        /// <returns>Task</returns>
-        public async Task DropAsync(string table = null) => await this.Context.DropAsync(table ?? this.OriginalTable);
-
-        /// <summary>
-        /// 数据表重命名
-        /// </summary>
-        /// <param name="table">需要删除的数据表名</param>
-        /// <returns>Task</returns>
-        public async Task RenameAsync(string rename, string originName = null)
-        {
-            await this.Context.RenameAsync(originName ?? this.OriginalTable, rename);
-            this.OriginalTable = rename;
-        }
-
-        /// <summary>
         /// 查询数据
         /// </summary>
         /// <param name="setting">QuerySetting</param>
         /// <returns>IDataRowCollection</returns>
         public async Task<IDataTable> QueryAsync(IQuerySetting setting) => await this.Context.QueryAsync(setting);
-
-        /// <summary>
-        /// 查询数据
-        /// </summary>
-        /// <param name="setting">QuerySetting</param>
-        /// <returns>IDataRowCollection</returns>
-        public IDataTable Query(IQuerySetting setting) => this.Context.Query(setting);
 
         /// <summary>
         /// 查询数据

@@ -1,4 +1,6 @@
-﻿namespace DataLib.Table.Interfaces;
+﻿using Newtonsoft.Json;
+
+namespace DataLib.Table.Interfaces;
 
 /// <summary>
 /// IMergeSetting
@@ -73,4 +75,16 @@ public interface IMergeSetting
     /// The name of the table.
     /// </value>
     string TableName { get; set; }
+    
+    /// <summary>
+    /// 左侧表
+    /// </summary>
+    [JsonIgnore] 
+    IDataTable Table { get; set; }
+    
+    /// <summary>
+    /// 右侧表
+    /// </summary>
+    [JsonIgnore] 
+    IDataTable RightTable { get; set; }
 }

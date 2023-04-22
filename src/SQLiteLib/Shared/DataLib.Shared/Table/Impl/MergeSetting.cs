@@ -54,4 +54,16 @@ public class MergeSetting : IMergeSetting
     /// 匹配的列
     /// </summary>
     public List<(IDataColumn Left, IDataColumn right)> MacthCloumns { get; set; } = new();
+    
+    /// <summary>
+    /// 左侧表
+    /// </summary>
+    [Newtonsoft.Json.JsonIgnore] 
+    public IDataTable Table { get; set; }
+    
+    /// <summary>
+    /// 右侧表
+    /// </summary>
+    [Newtonsoft.Json.JsonIgnore] 
+    public IDataTable RightTable { get; set; }
 }

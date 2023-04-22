@@ -6,10 +6,11 @@ using DataLib.Table.Impl;
 using DataLib.Table.Interfaces;
 using DuckDB.NET;
 using DuckDB.NET.Data;
+using DataRowCollection = DataLib.Table.Impl.DataRowCollection;
 
 namespace DuckDB.Lib
 {
-    public class DBContext : IDisposable
+    public class DBContext : DBContextBasic
     {
         #region Properties
 
@@ -23,7 +24,7 @@ namespace DuckDB.Lib
         /// <summary>
         /// 连接字符串格式化
         /// </summary>
-        public const string ConnectionStringFormat = "Data Source={0};Password={1};Cache=Shared;Mode=ReadWriteCreate;Pooling=true;";
+        public const string ConnectionStringFormat = "Data Source={0};";
 
         /// <summary>
         /// 数据库连接字符串
@@ -35,7 +36,7 @@ namespace DuckDB.Lib
         /// <summary>
         /// DB Path
         /// </summary>
-        public string DBFile { get; set; } = ":memory:";
+        public string DBFile { get; private set;}
 
         #endregion Properties
 
@@ -44,20 +45,25 @@ namespace DuckDB.Lib
         /// <summary>
         /// DBContext
         /// </summary>
-        public DBContext()
+        public DBContext(IDataTable table)
+            : base(table)
         {
+            //this.DBFile = Path.Combine(AppContext.BaseDirectory, "Data", $"{Guid.NewGuid()}.db");
+            this.DBFile =":memory:";
             this.OnConfiguring();
         }
 
         /// <summary>
         /// Called when [configuring].
         /// </summary>
-        protected async Task OnConfiguring()
+        protected override async Task OnConfiguring()
         {
             this.ConnectionString = $"Data Source={this.DBFile}";
 
+            if(this.connection?.State == ConnectionState.Open)
+                return;
+            
             this.connection = new DuckDBConnection(this.ConnectionString);
-
             if (this.connection.State != ConnectionState.Open)
                 await this.connection.OpenAsync();
         }
@@ -65,11 +71,61 @@ namespace DuckDB.Lib
         /// <summary>
         /// Dispose
         /// </summary>
-        public void Dispose()
+        public override void Dispose()
         {
             this.connection?.Close();
             this.connection?.Dispose();
         }
+
+        public override Task MergeRowsAsync(IUpdateSetting setting) => throw new NotImplementedException();
+
+        public override Task MergeRowsAsync(IMergeSetting setting) => throw new NotImplementedException();
+
+        public override Task MergeColumnsAsync(IMergeSetting setting) => throw new NotImplementedException();
+
+        /// <summary>
+        /// 查询数据
+        /// </summary>
+        /// <param name="setting">数据查询参数设置</param>
+        /// <returns>IDataTable</returns>
+        public override async Task<IDataTable> QueryAsync(IQuerySetting setting)
+        {
+            if (setting.Table == null)
+                throw new ArgumentNullException(nameof(QuerySetting.Table));
+
+            if (!(setting.Columns?.Any() ?? false))
+                throw new ArgumentNullException(nameof(QuerySetting.Columns));
+
+            await this.OnConfiguring();
+            var table = setting.Table.Clone();
+            var cmd = new DuckDbCommand();
+            var whereSql = DuckDBQueryFilter.BuildWhereSql(setting.Parameters);
+            var orderSql = DuckDBQueryFilter.BuildOrderSql(setting.OrderFields);
+            var sql = $"SELECT {string.Join(',', setting.Columns.Select(c => c.Field))} FROM {setting.Table.OriginalTable} {whereSql} {orderSql}";
+            cmd.CommandText = sql.ToString();
+            cmd.Connection = this.connection;
+            var reader = cmd.ExecuteReader();
+
+            while (await reader.ReadAsync())
+            {
+                var row = table.NewRow();
+                for (int i = 0; i < setting.Columns.Count; i++)
+                {
+                    var column = setting.Columns[i];
+                    row[column.ColumnIndex] = reader[i];
+                }
+
+                table.Rows.Add(row);
+            }
+
+            Console.WriteLine(sql);
+
+            return table;
+        }
+
+        public override Task<int> QueryRowCountAsync() => throw new NotImplementedException();
+
+        public override Task<int> UpdateAsync(IUpdateSetting setting) => throw new NotImplementedException();
 
         #endregion OnConfiguring
 
@@ -120,12 +176,14 @@ namespace DuckDB.Lib
 
         #region Insert Del Update Del Rename Drop
 
+        public override Task AddColumnsAsync(IUpdateSetting setting) => throw new NotImplementedException();
+
         /// <summary>
         /// 创建数据表
         /// </summary>
         /// <param name="table">IDataTable</param>
         /// <returns>Task</returns>
-        public async Task CreateTableAsync(IDataTable table)
+        public override async Task CreateTableAsync(IDataTable table)
         {
             if (table == null)
                 throw new ArgumentNullException(nameof(table));
@@ -149,13 +207,165 @@ namespace DuckDB.Lib
                     sqlBuilder.Append(",");
 
                 var col = table.Columns[i];
-                sqlBuilder.Append($"{col.Field} {GetSqliteType(col.TypeCode)} {(col.IsPK ? "PRIMARY KEY" : string.Empty)} ");
+                sqlBuilder.Append($"{col.Field} {this.GetDBTypeName(this.GetDBType(col.TypeCode))} {(col.IsPK ? "PRIMARY KEY" : string.Empty)} ");
             }
 
             sqlBuilder.Append(")");
 
             cmd.CommandText = sqlBuilder.ToString();
             recount += await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// 写入数据
+        /// </summary> 
+        public override async Task WriteAsync()
+        {
+            if (!(this.DataTable.Rows?.Any() ?? false))
+                throw new ArgumentNullException(nameof(this.DataTable.Rows));
+
+            if (string.IsNullOrWhiteSpace(this.DataTable.OriginalTable))
+                throw new ArgumentNullException(nameof(this.DataTable.OriginalTable));
+
+            try
+            {
+                await this.OnConfiguring();
+                var columns = this.DataTable.Columns;
+
+                using (var appender = connection.CreateAppender(this.DataTable.OriginalTable))
+                {
+                    for (int i = 0; i < this.DataTable.RowCount; i++)
+                    {
+                        var appenderRow = appender.CreateRow();
+                        for (int j = 0; j < this.DataTable.ColumnCount; j++)
+                        {
+                            var val = this.DataTable.Rows[i][j];
+                            var column = this.DataTable.Columns[j];
+                            switch (column.TypeCode)
+                            {
+                                case TypeCode.Boolean:
+                                    appenderRow.AppendValue((bool?)val);
+                                    break;
+                                case TypeCode.Byte:
+                                    appenderRow.AppendValue((byte?)val);
+                                    break;
+                                case TypeCode.Decimal:
+                                case TypeCode.Double:
+                                case TypeCode.Single:
+                                    appenderRow.AppendValue((double?)val);
+                                    break;
+                                case TypeCode.Int16:
+                                case TypeCode.Int32:
+                                    appenderRow.AppendValue((int?)val);
+                                    break;
+                                case TypeCode.Int64:
+                                    appenderRow.AppendValue((long?)val);
+                                    break;
+                                case TypeCode.DateTime:
+                                    if (val == null)
+                                        appenderRow.AppendNullValue();
+                                    else
+                                    {
+                                        var time = new DuckDBTime { Micros = ((DateTime)val).Ticks / 10 };
+                                        appenderRow.AppendValue(time);
+                                    }
+                                    break;
+                                case TypeCode.String:
+                                default:
+                                    appenderRow.AppendValue($"{val}");
+                                    break;
+                            }
+                        }
+
+                        appenderRow.EndRow();
+                    }
+
+                    appender.Close(); // this will flush the appender to the database
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rows"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public override async Task WriteAsync(IDataRowCollection rows)
+        {
+            if (!(rows?.Any() ?? false))
+                throw new ArgumentNullException(nameof(this.DataTable.Rows));
+
+            if (string.IsNullOrWhiteSpace(this.DataTable.OriginalTable))
+                throw new ArgumentNullException(nameof(this.DataTable.OriginalTable));
+
+            try
+            {
+                await this.OnConfiguring();
+                var columns = this.DataTable.Columns;
+
+                using (var appender = connection.CreateAppender(this.DataTable.OriginalTable))
+                {
+                    for (int i = 0; i < rows.Count; i++)
+                    {
+                        var appenderRow = appender.CreateRow();
+                        for (int j = 0; j < this.DataTable.ColumnCount; j++)
+                        {
+                            var val = rows[i][j];
+                            var column = this.DataTable.Columns[j];
+                            switch (column.TypeCode)
+                            {
+                                case TypeCode.Boolean:
+                                    appenderRow.AppendValue((bool?)val);
+                                    break;
+                                case TypeCode.Byte:
+                                    appenderRow.AppendValue((byte?)val);
+                                    break;
+                                case TypeCode.Decimal:
+                                case TypeCode.Double:
+                                case TypeCode.Single:
+                                    appenderRow.AppendValue((double?)val);
+                                    break;
+                                case TypeCode.Int16:
+                                case TypeCode.Int32:
+                                    appenderRow.AppendValue((int?)val);
+                                    break;
+                                case TypeCode.Int64:
+                                    appenderRow.AppendValue((long?)val);
+                                    break;
+                                case TypeCode.DateTime:
+                                    if (val == null)
+                                        appenderRow.AppendNullValue();
+                                    else
+                                    {
+                                        var time = new DuckDBTime { Micros = ((DateTime)val).Ticks / 10 };
+                                        appenderRow.AppendValue(time);
+                                    }
+                                    break;
+                                case TypeCode.String:
+                                default:
+                                    appenderRow.AppendValue($"{val}");
+                                    break;
+                            }
+                        }
+
+                        appenderRow.EndRow();
+                    }
+
+                    appender.Close(); // this will flush the appender to the database
+                }
+            }
+            catch
+                (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         /// <summary>
@@ -234,34 +444,9 @@ namespace DuckDB.Lib
             for (int i = 0; i < setting.NewColumns.Count; i++)
             {
                 var col = setting.NewColumns[i];
-                cmd.CommandText = $"ALTER TABLE {setting.Table} ADD COLUMN {col.Field} {Enum.GetName(GetSqliteType(col.TypeCode))} ";
+                cmd.CommandText = $"ALTER TABLE {setting.Table} ADD COLUMN {col.Field} {Enum.GetName(this.GetDBType(col.TypeCode))} ";
                 recount += await cmd.ExecuteNonQueryAsync();
             }
-        }
-
-        /// <summary>
-        /// 删除数据
-        /// </summary>
-        /// <param name="setting">UpdateSetting</param>
-        /// <returns>Task</returns>
-        public async Task DelAsync(UpdateSetting setting)
-        {
-            if (string.IsNullOrWhiteSpace(setting.Table))
-                throw new ArgumentNullException(nameof(UpdateSetting.Table));
-
-            if (setting.Parameters == null || !setting.Parameters.Any())
-                throw new ArgumentNullException(nameof(UpdateSetting.Parameters));
-
-            await this.OnConfiguring();
-            var sqlBuilder = new StringBuilder();
-            var cmd = new DuckDbCommand() { Connection = this.connection };
-            var recount = 0;
-
-            sqlBuilder.Append($"DELTE FROM {setting.Table} ");
-            sqlBuilder.Append(DuckDBQueryFilter.BuildWhereSql(setting.Parameters));
-
-            cmd.CommandText = sqlBuilder.ToString();
-            recount += await cmd.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -374,11 +559,11 @@ namespace DuckDB.Lib
                 throw new ArgumentNullException(nameof(MergeSetting.MacthCloumns));
 
             await this.OnConfiguring();
-            var columns = setting.LeftColumns.Copy();
+            var columns = setting.LeftColumns.Clone();
 
             if (setting.NewColumns?.Any() ?? false)
             {
-                columns.AddRange(setting.NewColumns.Copy());
+                columns.AddRange(setting.NewColumns.Clone());
                 await this.AddColumnsAsync(new UpdateSetting { Table = setting.TableName, NewColumns = setting.NewColumns });
             }
 
@@ -417,7 +602,6 @@ namespace DuckDB.Lib
             #region Rename
 
             var rename = $"{setting.TableName}_{DateTime.Now:MMddHHmmss}";
-            await this.RenameAsync(setting.TableName, rename);
             setting.TableName = rename;
 
             #endregion Rename
@@ -468,40 +652,6 @@ namespace DuckDB.Lib
         }
 
         /// <summary>
-        /// 删除数据表
-        /// </summary>
-        /// <param name="table">需要删除的数据表名</param>
-        /// <returns>Task</returns>
-        public async Task DropAsync(string table)
-        {
-            if (string.IsNullOrWhiteSpace(table))
-                throw new ArgumentNullException(nameof(table));
-
-            await this.OnConfiguring();
-            var cmd = new DuckDbCommand() { Connection = this.connection };
-
-            cmd.CommandText = $"DROP TABLE {table} ";
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        /// <summary>
-        /// 数据表重命名
-        /// </summary>
-        /// <param name="table">需要删除的数据表名</param>
-        /// <returns>Task</returns>
-        public async Task RenameAsync(string table, string rename)
-        {
-            if (string.IsNullOrWhiteSpace(table))
-                throw new ArgumentNullException(nameof(table));
-
-            await this.OnConfiguring();
-            var cmd = new DuckDbCommand() { Connection = this.connection };
-
-            cmd.CommandText = $"ALTER TABLE {table} RENAME TO {rename}";
-            await cmd.ExecuteNonQueryAsync();
-        }
-
-        /// <summary>
         /// Executes the non query asynchronous.
         /// </summary>
         /// <param name="sql">The SQL.</param>
@@ -527,7 +677,7 @@ namespace DuckDB.Lib
         /// </summary>
         /// <param name="code">C# TypeCode</param>
         /// <returns>SqliteType</returns>
-        private DuckDBType GetSqliteType(TypeCode code)
+        private DuckDBType GetDBType(TypeCode code)
         {
             switch (code)
             {
@@ -561,6 +711,38 @@ namespace DuckDB.Lib
             }
         }
 
+        /// <summary>
+        /// 获取数据类型名称
+        /// </summary>
+        /// <param name="dbType">DuckDBType</param>
+        /// <returns>DBType Name</returns>
+        private string GetDBTypeName(DuckDBType dbType)
+        {
+            switch (dbType)
+            {
+                case DuckDBType.DuckdbTypeBlob:
+                    return "BLOB";
+                case DuckDBType.DuckdbTypeBoolean:
+                    return "BOOLEAN";
+                case DuckDBType.DuckdbTypeInteger:
+                    return "INTEGER";
+                case DuckDBType.DuckdbTypeBigInt:
+                    return "BIGINT";
+                case DuckDBType.DuckdbTypeDouble:
+                    return "DOUBLE";
+                case DuckDBType.DuckdbTypeTimestamp:
+                    return "TIMESTAMP";
+                case DuckDBType.DuckdbTypeVarchar:
+                    return "VARCHAR";
+                case DuckDBType.DuckdbTypeDate:
+                    return "DATE";
+                case DuckDBType.DuckdbTypeTime:
+                    return "TIME"; 
+                default:
+                    return "VARCHAR";
+            }
+        }
+        
         #endregion private method
     }
 }

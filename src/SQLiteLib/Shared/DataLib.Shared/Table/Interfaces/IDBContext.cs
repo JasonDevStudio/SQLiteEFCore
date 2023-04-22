@@ -14,7 +14,7 @@ namespace DataLib.Table
         /// <value>
         /// The database path.
         /// </value>
-        string DBPath { get; set; }
+        string DBFile { get; init; }
 
         /// <summary>
         /// Gets or sets the data table.
@@ -39,21 +39,7 @@ namespace DataLib.Table
         /// <param name="table">The table.</param>
         /// <returns></returns>
         Task CreateTableAsync(IDataTable table);
-
-        /// <summary>
-        /// Deletes the asynchronous.
-        /// </summary>
-        /// <param name="setting">The setting.</param>
-        /// <returns></returns>
-        Task DelAsync(IUpdateSetting setting);
-
-        /// <summary>
-        /// Drops the asynchronous.
-        /// </summary>
-        /// <param name="table">The table.</param>
-        /// <returns></returns>
-        Task DropAsync(string table);
-
+ 
         /// <summary>
         /// Executes the non query asynchronous.
         /// </summary>
@@ -61,12 +47,18 @@ namespace DataLib.Table
         /// <returns></returns>
         Task ExecuteNonQueryAsync(string sql);
 
+       /// <summary>
+       /// 写入数据
+       /// </summary>
+       /// <returns>Task</returns>
+        Task WriteAsync();
+        
         /// <summary>
         /// Inserts the asynchronous.
         /// </summary>
         /// <param name="rows">The rows.</param>
         /// <returns></returns>
-        Task<int> InsertAsync(IDataRowCollection rows);
+        Task WriteAsync(IDataRowCollection rows);
 
         /// <summary>
         /// Merges the columns asynchronous.
@@ -102,21 +94,6 @@ namespace DataLib.Table
         /// <param name="setting">The setting.</param>
         /// <returns></returns>
         Task<int> QueryRowCountAsync();
-
-        /// <summary>
-        /// Queries the asynchronous.
-        /// </summary>
-        /// <param name="setting">The setting.</param>
-        /// <returns>IDataTable</returns>
-        IDataTable Query(IQuerySetting setting);
-
-        /// <summary>
-        /// Renames the asynchronous.
-        /// </summary>
-        /// <param name="table">The table.</param>
-        /// <param name="rename">The rename.</param>
-        /// <returns></returns>
-        Task RenameAsync(string table, string rename);
 
         /// <summary>
         /// Updates the asynchronous.

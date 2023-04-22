@@ -25,7 +25,7 @@ namespace DataLib.Table.Impl
         /// <param name="table">The table.</param>
         public DataColumnCollection(List<IDataColumn> columns, IDataTable table = null)
         {
-            Table = table;
+            this.Table = table;
             this.AddRange(columns);
         }
 
@@ -76,13 +76,16 @@ namespace DataLib.Table.Impl
         /// 复制数据列集合
         /// </summary>
         /// <returns>IDataColumnCollection</returns>
-        public IDataColumnCollection Copy()
+        public IDataColumnCollection Clone()
         {
-            var columns = new DataColumnCollection();
-            var colArry = new IDataColumn[this.Count];
-            this.Columns.CopyTo(colArry, 0);
-            columns.AddRange(colArry);
-            columns.Table = this.Table;
+            var columns = new DataColumnCollection{Table = this.Table};
+
+            foreach (var column in this.Columns)
+            {
+                var newColumn = new DataColumn(column);
+                columns.Add(newColumn);
+            }
+             
             return columns;
         }
 
