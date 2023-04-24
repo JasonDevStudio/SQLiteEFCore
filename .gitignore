@@ -21,3 +21,11 @@
 /src/SQLiteLib/Lib/DataLib/obj
 /src/SQLiteLib/Lib/Hdf5Lib/bin/Debug/net7.0
 /src/SQLiteLib/Lib/Hdf5Lib/obj
+/.idea/.idea.folder.dir/.idea
+/src/SQLiteLib/.idea/.idea.SQLiteLib/.idea
+/src/SQLiteLib/Lib/DuckDBLib/bin/Debug
+/src/SQLiteLib/Lib/DuckDBLib/obj
+/src/SQLiteLib/Tests/DuckDB.ConsoleTest/bin/Debug/net7.0
+/src/SQLiteLib/Tests/DuckDB.ConsoleTest/obj/Debug/net7.0/ref
+/src/SQLiteLib/Tests/DuckDB.ConsoleTest/obj/Debug/net7.0
+/src/SQLiteLib/Tests/DuckDB.ConsoleTest/obj
